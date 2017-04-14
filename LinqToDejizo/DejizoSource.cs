@@ -1,4 +1,5 @@
 ﻿using Marimo.LinqToDejizo;
+using Microsoft.AspNetCore.WebUtilities;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -27,7 +28,22 @@ namespace Marimo.LinqToDejizo
             {
                 var client = new HttpClient();
 
-                var response = await client.GetAsync("http://public.dejizo.jp/NetDicV09.asmx/SearchDicItemLite?Dic=EJdict&Word=dict&Scope=HEADWORD&Match=STARTWITH&Merge=AND&Prof=XHTML&PageSize=20&PageIndex=0");
+                var uri =
+                    QueryHelpers.AddQueryString(
+                        "http://public.dejizo.jp/NetDicV09.asmx/SearchDicItemLite",
+                        new Dictionary<string, string>
+                        {
+                            {"Dic", "EJdict"},
+                            {"Word", "dict"},
+                            {"Scope", "HEADWORD"},
+                            {"Match", "STARTWITH"},
+                            {"Merge", "AND"},
+                            {"Prof", "XHTML"},
+                            {"PageSize", "20"},
+                            {"PageIndex", "0"}
+                        });
+
+                var response = await client.GetAsync(uri);
 
                 var stream = await response.Content.ReadAsStreamAsync();
 
