@@ -20,5 +20,18 @@ namespace Marimo.LinqToDejizo.Test
 
             query.Count().Is(11);
         }
+
+        [Fact]
+        public void RestAPIで検索する単語に合わせたCountが取得できます()
+        {
+            var tested = new DejizoSource();
+
+            var query =
+                from word in tested.RestEJdict
+                where word.StartsWith("take")
+                select word;
+
+            query.Count().Is(6);
+        }
     }
 }

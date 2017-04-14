@@ -27,14 +27,14 @@ namespace Marimo.LinqToDejizo
             Task.Run(async () =>
             {
                 var client = new HttpClient();
-
+                
                 var uri =
                     QueryHelpers.AddQueryString(
                         "http://public.dejizo.jp/NetDicV09.asmx/SearchDicItemLite",
                         new Dictionary<string, string>
                         {
                             {"Dic", "EJdict"},
-                            {"Word", "dict"},
+                            {"Word", (string)((ConstantExpression)((MethodCallExpression)((LambdaExpression)((UnaryExpression)((MethodCallExpression)((MethodCallExpression)expression).Arguments[0]).Arguments[1]).Operand).Body).Arguments[0]).Value},
                             {"Scope", "HEADWORD"},
                             {"Match", "STARTWITH"},
                             {"Merge", "AND"},
