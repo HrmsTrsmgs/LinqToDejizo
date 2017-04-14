@@ -1,10 +1,15 @@
-﻿using System;
+﻿using Marimo.LinqToDejizo;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Net.Http;
 using System.Reflection;
+using System.Runtime.Serialization;
 using System.Text;
+using System.Threading.Tasks;
+using System.Xml.Serialization;
 
 namespace Marimo.LinqToDejizo
 {
@@ -17,7 +22,23 @@ namespace Marimo.LinqToDejizo
     {
         public override object Execute(Expression expression)
         {
-            return 11;
+            SearchDicItemResult result = null;
+            Task.Run(async () =>
+            {
+                var client = new HttpClient();
+
+                var response = await client.GetAsync("http://public.dejizo.jp/NetDicV09.asmx/SearchDicItemLite?Dic=EJdict&Word=dict&Scope=HEADWORD&Match=STARTWITH&Merge=AND&Prof=XHTML&PageSize=20&PageIndex=0");
+
+                var stream = await response.Content.ReadAsStreamAsync();
+
+                var serializer = new DataContractSerializer(typeof(SearchDicItemResult));
+
+                result = serializer.ReadObject(stream) as SearchDicItemResult;
+            }).Wait();
+
+            
+
+            return result.TotalHitCount;
         }
 
         public override string GetQueryText(Expression expression)

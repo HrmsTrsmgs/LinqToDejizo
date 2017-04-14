@@ -13,11 +13,12 @@ namespace Marimo.LinqToDejizo.Test
         {
             var tested = new DejizoSource();
 
+            var query =
+                from word in tested.RestEJdict
+                where word.StartsWith("dict")
+                select word;
 
-            (from word in tested.RestEJdict
-             where word.StartsWith("dict")
-             select word)
-            .Count().Is(11);
+            query.Count().Is(11);
         }
     }
 }
