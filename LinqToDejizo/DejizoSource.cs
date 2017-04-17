@@ -33,14 +33,55 @@ namespace Marimo.LinqToDejizo
             Task.Run(async () =>
             {
                 var client = new HttpClient();
-                
+
+                string word = null;
+                switch(expression)
+                {
+                    case MethodCallExpression m:
+                        switch(m.Arguments[0])
+                        {
+                            case MethodCallExpression mm:
+                                switch(mm.Arguments[1])
+                                {
+                                    case UnaryExpression u:
+                                        switch(u.Operand)
+                                        {
+                                            case LambdaExpression l:
+                                                switch(l.Body)
+                                                {
+                                                    case MethodCallExpression mmm:
+                                                        
+                                                        switch (mmm.Arguments[0])
+                                                        {
+                                                            case ConstantExpression c:
+                                                                switch (c.Value)
+                                                                {
+                                                                    case string s:
+                                                                        word = s;
+                                                                        break;
+                                                                }
+
+                                                                break;
+                                                        }
+                                                        break;
+                                                }
+                                                break;
+                                        }
+                                        break;
+
+                                }
+                                break;
+                        }
+                        break;
+                }
+
                 var uri =
                     QueryHelpers.AddQueryString(
                         "http://public.dejizo.jp/NetDicV09.asmx/SearchDicItemLite",
                         new Dictionary<string, string>
                         {
                             {"Dic", "EJdict"},
-                            {"Word", (string)((ConstantExpression)((MethodCallExpression)((LambdaExpression)((UnaryExpression)((MethodCallExpression)((MethodCallExpression)expression).Arguments[0]).Arguments[1]).Operand).Body).Arguments[0]).Value},
+                            {"Word", word},
                             {"Scope", "HEADWORD"},
                             {"Match", "STARTWITH"},
                             {"Merge", "AND"},
