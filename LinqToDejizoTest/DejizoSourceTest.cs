@@ -14,9 +14,9 @@ namespace Marimo.LinqToDejizo.Test
             var tested = new DejizoSource();
 
             var query =
-                from word in tested.RestEJdict
-                where word.StartsWith("dict")
-                select word;
+                from item in tested.EJdict
+                where item.HeaderText.StartsWith("dict")
+                select item;
 
             query.Count().Is(11);
         }
@@ -27,9 +27,9 @@ namespace Marimo.LinqToDejizo.Test
             var tested = new DejizoSource();
 
             var query =
-                from word in tested.RestEJdict
-                where word.StartsWith("take")
-                select word;
+                from item in tested.EJdict
+                where item.HeaderText.StartsWith("take")
+                select item;
 
             query.Count().Is(6);
         }
