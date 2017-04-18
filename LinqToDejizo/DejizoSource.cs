@@ -35,6 +35,7 @@ namespace Marimo.LinqToDejizo
                 var client = new HttpClient();
 
                 string word = null;
+                string match = null;
                 switch(expression)
                 {
                     case MethodCallExpression m:
@@ -51,8 +52,35 @@ namespace Marimo.LinqToDejizo
                                                 {
                                                     case MethodCallExpression mmm:
                                                         
+                                                        if(mmm.Method == typeof(string).GetMethod("EndsWith",new[] {typeof(string) }))
+                                                        {
+                                                            match = "ENDWITH";
+                                                        }
+                                                        else if(mmm.Method == typeof(string).GetMethod("StartsWith", new[] { typeof(string) }))
+                                                        {
+                                                            match = "STARTWITH";
+                                                        }
+                                                        else if (mmm.Method == typeof(string).GetMethod("Contains", new[] { typeof(string) }))
+                                                        {
+                                                            match = "CONTAIN";
+                                                        }
+
                                                         switch (mmm.Arguments[0])
                                                         {
+                                                            case ConstantExpression c:
+                                                                switch (c.Value)
+                                                                {
+                                                                    case string s:
+                                                                        word = s;
+                                                                        break;
+                                                                }
+
+                                                                break;
+                                                        }
+                                                        break;
+                                                    case BinaryExpression b:
+                                                        match = "EXACT";
+                                                        switch (b.Right)                                                       {
                                                             case ConstantExpression c:
                                                                 switch (c.Value)
                                                                 {
@@ -83,7 +111,7 @@ namespace Marimo.LinqToDejizo
                             {"Dic", "EJdict"},
                             {"Word", word},
                             {"Scope", "HEADWORD"},
-                            {"Match", "STARTWITH"},
+                            {"Match", match},
                             {"Merge", "AND"},
                             {"Prof", "XHTML"},
                             {"PageSize", "20"},
