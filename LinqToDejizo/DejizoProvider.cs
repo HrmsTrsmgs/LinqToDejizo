@@ -120,7 +120,7 @@ namespace Marimo.LinqToDejizo
 
         public override string GetQueryText(Expression expression)
         {
-            return expression.ToString();
+            return "query text";
         }
     }
 }
