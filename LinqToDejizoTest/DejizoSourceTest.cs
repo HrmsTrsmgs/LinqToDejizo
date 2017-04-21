@@ -85,5 +85,22 @@ namespace Marimo.LinqToDejizo.Test
 
             query.Count().Is(1);
         }
+
+        [Fact]
+        public void 英和辞書で取得したものに対してイテレーションが利きます()
+        {
+            var tested = new DejizoSource();
+
+            var query =
+                from item in tested.EJdict
+                where item.HeaderText.StartsWith("dict")
+                select item;
+
+            foreach(var item in query)
+            {
+                item.BodyText.Is("ｄｉｃｔａｔｉｏｎ	ｄｉｃｔａｔｏｒ	ｄｉｃｔｉｏｎａｒｙ");
+                break;
+            }
+        }
     }
 }
