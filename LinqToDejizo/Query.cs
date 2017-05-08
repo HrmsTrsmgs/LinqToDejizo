@@ -28,15 +28,7 @@ namespace Marimo.LinqToDejizo
 
         public Query(QueryProvider provider)
         {
-
-            if (provider == null)
-            {
-
-                throw new ArgumentNullException(nameof(provider));
-
-            }
-
-            this.provider = provider;
+            this.provider = provider ?? throw new ArgumentNullException(nameof(provider));
 
             this.expression = Expression.Constant(this);
 
@@ -46,19 +38,9 @@ namespace Marimo.LinqToDejizo
 
         public Query(QueryProvider provider, Expression expression)
         {
-
-            if (provider == null)
-            {
-
-                throw new ArgumentNullException(nameof(provider));
-
-            }
-
             if (expression == null)
             {
-
                 throw new ArgumentNullException(nameof(expression));
-
             }
 
             if (!typeof(IQueryable<T>).IsAssignableFrom(expression.Type))
@@ -68,7 +50,7 @@ namespace Marimo.LinqToDejizo
 
             }
 
-            this.provider = provider;
+            this.provider = provider ?? throw new ArgumentNullException(nameof(provider));
 
             this.expression = expression;
 

@@ -10,5 +10,11 @@ namespace Marimo.LinqToDejizo
     {
         public string HeaderText { get; set; }
         public string BodyText { get; set; }
+
+        public DejizoItem(GetDicItemResult result)
+        {
+            HeaderText = result.Head.Value.Trim();
+            BodyText = result.Body.Value.Trim();
+        }
     }
 }

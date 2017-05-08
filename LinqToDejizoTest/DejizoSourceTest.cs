@@ -102,5 +102,70 @@ namespace Marimo.LinqToDejizo.Test
                 break;
             }
         }
+
+        [Fact]
+        public void 英和辞書で取得したものに対してFirstが使えます()
+        {
+            var tested = new DejizoSource();
+
+            var query =
+                from item in tested.EJdict
+                where item.HeaderText.StartsWith("dict")
+                select item;
+           
+           query.First().BodyText.Is("ｄｉｃｔａｔｉｏｎ	ｄｉｃｔａｔｏｒ	ｄｉｃｔｉｏｎａｒｙ");
+        }
+
+        [Fact]
+        public void Firstは項目がなかった場合にエラーとなります()
+        {
+            var tested = new DejizoSource();
+
+            var query =
+                from item in tested.EJdict
+                where item.HeaderText.StartsWith("xxx")
+                select item;
+
+            Assert.Throws<InvalidOperationException>(() =>query.First());
+        }
+
+        [Fact]
+        public void 英和辞書で取得したものに対してSingleが使えます()
+        {
+            var tested = new DejizoSource();
+
+            var query =
+                from item in tested.EJdict
+                where item.HeaderText == "dictionary"
+                select item;
+
+            query.Single().BodyText.Is("『辞書』，辞典，字引き");
+        }
+
+        [Fact]
+        public void Singleは項目がなかった場合にエラーとなります()
+        {
+            var tested = new DejizoSource();
+
+            var query =
+                from item in tested.EJdict
+                where item.HeaderText.StartsWith("xxx")
+                select item;
+
+            Assert.Throws<InvalidOperationException>(() => query.Single());
+        }
+
+        [Fact]
+        public void Singleは項目が二つ以上あった場合にエラーとなります()
+        {
+            var tested = new DejizoSource();
+
+            var query =
+                from item in tested.EJdict
+                where item.HeaderText.StartsWith("dict")
+                select item;
+
+            Assert.Throws<InvalidOperationException>(() => query.Single());
+        }
     }
 }

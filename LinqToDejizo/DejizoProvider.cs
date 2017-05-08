@@ -21,8 +21,8 @@ namespace Marimo.LinqToDejizo
             {
                 switch (expression)
                 {
-                    case MethodCallExpression m when m.Method.Name == "Count":
-                        condition.ResultType = "Count";
+                    case MethodCallExpression m when new[] { "Count", "First", "Single" }.Contains(m.Method.Name):
+                        condition.ResultType = m.Method.Name;
                         SelectItems(m.Arguments[0], condition);
                         break;
                     case MethodCallExpression m:
@@ -45,14 +45,19 @@ namespace Marimo.LinqToDejizo
 
             }).GetAwaiter().GetResult();
 
-            switch(condition.ResultType)
+            var query =
+                from item in results
+                select new DejizoItem(item);
+            switch (condition.ResultType)
             {
                 case "Count":
                     return result.TotalHitCount;
+                case "First":
+                    return query.First();
+                case "Single":
+                    return query.Single();
                 case "SelectItems":
-                    return 
-                        from item in results
-                        select new DejizoItem { HeaderText = item.Head.Value.Trim(), BodyText = item.Body.Value.Trim() };
+                    return query;
                 default:
                     return null;
             }
