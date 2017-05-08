@@ -167,5 +167,31 @@ namespace Marimo.LinqToDejizo.Test
 
             Assert.Throws<InvalidOperationException>(() => query.Single());
         }
+
+        [Fact]
+        public void SelectでBodyTextの選択ができます()
+        {
+            var tested = new DejizoSource();
+
+            var query =
+                from item in tested.EJdict
+                where item.HeaderText.StartsWith("dict")
+                select item.BodyText;
+
+            query.First().Is("ｄｉｃｔａｔｉｏｎ	ｄｉｃｔａｔｏｒ	ｄｉｃｔｉｏｎａｒｙ");
+        }
+
+        [Fact]
+        public void SelectでHeaderTextの選択ができます()
+        {
+            var tested = new DejizoSource();
+
+            var query =
+                from item in tested.EJdict
+                where item.HeaderText.StartsWith("dict")
+                select item.HeaderText;
+
+            query.First().Is("dict.");
+        }
     }
 }

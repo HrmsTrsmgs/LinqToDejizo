@@ -26,14 +26,14 @@ namespace Marimo.LinqToDejizo
                     "http://public.dejizo.jp/NetDicV09.asmx/SearchDicItemLite",
                     new Dictionary<string, string>
                     {
-                                        {"Dic", "EJdict"},
-                                        {"Word", condition.Word},
-                                        {"Scope", "HEADWORD"},
-                                        {"Match", condition.Match},
-                                        {"Merge", "AND"},
-                                        {"Prof", "XHTML"},
-                                        {"PageSize", "20"},
-                                        {"PageIndex", "0"}
+                        {"Dic", "EJdict"},
+                        {"Word", condition.Word},
+                        {"Scope", "HEADWORD"},
+                        {"Match", condition.Match},
+                        {"Merge", "AND"},
+                        {"Prof", "XHTML"},
+                        {"PageSize", "20"},
+                        {"PageIndex", "0"}
                     });
 
             var response = await client.GetAsync(uri);

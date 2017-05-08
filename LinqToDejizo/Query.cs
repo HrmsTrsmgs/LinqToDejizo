@@ -20,8 +20,7 @@ namespace Marimo.LinqToDejizo
         public Expression Expression => expression;
 
         public IQueryProvider Provider => provider;
-
-        public IEnumerator<T> GetEnumerator() => ((IEnumerable<T>)this.provider.Execute(this.expression)).GetEnumerator();
+        public IEnumerator<T> GetEnumerator() => ((IEnumerable)this.provider.Execute(this.expression)).Cast<T>().GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 
 

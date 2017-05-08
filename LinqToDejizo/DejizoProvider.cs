@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Text;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Collections;
 
 namespace Marimo.LinqToDejizo
 {
@@ -45,9 +46,13 @@ namespace Marimo.LinqToDejizo
 
             }).GetAwaiter().GetResult();
 
-            var query =
+
+
+            IEnumerable<object> query =
                 from item in results
-                select new DejizoItem(item);
+                let dejizoItem = new DejizoItem(item)
+                select condition.SelectLambda == null ? dejizoItem : ((Func<DejizoItem, object>)condition.SelectLambda.Compile())(dejizoItem);
+
             switch (condition.ResultType)
             {
                 case "Count":
@@ -68,42 +73,68 @@ namespace Marimo.LinqToDejizo
         {
             switch (expression)
             {
-                case MethodCallExpression mm:
-                    switch (mm.Arguments[1])
+                case MethodCallExpression m when m.Method.Name == "Where":
+                    Where(condition, m);
+                    break;
+                case MethodCallExpression m when m.Method.Name == "Select":
+                    switch(m.Arguments[0])
                     {
-                        case UnaryExpression u:
-                            switch (u.Operand)
+                        case MethodCallExpression mm:
+                            Where(condition, mm);
+                            switch(m.Arguments[1])
                             {
-                                case LambdaExpression l:
-                                    switch (l.Body)
+                                case UnaryExpression u:
+                                    switch (u.Operand)
                                     {
-                                        case MethodCallExpression mmm:
-
-                                            if (mmm.Method == typeof(string).GetMethod("EndsWith", new[] { typeof(string) }))
-                                            {
-                                                condition.Match = "ENDWITH";
-                                            }
-                                            else if (mmm.Method == typeof(string).GetMethod("StartsWith", new[] { typeof(string) }))
-                                            {
-                                                condition.Match = "STARTWITH";
-                                            }
-                                            else if (mmm.Method == typeof(string).GetMethod("Contains", new[] { typeof(string) }))
-                                            {
-                                                condition.Match = "CONTAIN";
-                                            }
-                                            WordConstant(mmm.Arguments[0], condition);
-                                            break;
-                                        case BinaryExpression b:
-                                            condition.Match = "EXACT";
-                                            WordConstant(b.Right, condition);
+                                        case LambdaExpression l:
+                                            condition.SelectLambda = l;
                                             break;
                                     }
+                                            
+                                break;
+                            }
+                            
+                            break;
+                    }
+                    break;
+            }
+        }
+
+        private static void Where(SearchDicItemCondition condition, MethodCallExpression m)
+        {
+            switch (m.Arguments[1])
+            {
+                case UnaryExpression u:
+                    switch (u.Operand)
+                    {
+                        case LambdaExpression l:
+                            switch (l.Body)
+                            {
+                                case MethodCallExpression mmm:
+
+                                    if (mmm.Method == typeof(string).GetMethod("EndsWith", new[] { typeof(string) }))
+                                    {
+                                        condition.Match = "ENDWITH";
+                                    }
+                                    else if (mmm.Method == typeof(string).GetMethod("StartsWith", new[] { typeof(string) }))
+                                    {
+                                        condition.Match = "STARTWITH";
+                                    }
+                                    else if (mmm.Method == typeof(string).GetMethod("Contains", new[] { typeof(string) }))
+                                    {
+                                        condition.Match = "CONTAIN";
+                                    }
+                                    WordConstant(mmm.Arguments[0], condition);
+                                    break;
+                                case BinaryExpression b:
+                                    condition.Match = "EXACT";
+                                    WordConstant(b.Right, condition);
                                     break;
                             }
                             break;
-
                     }
                     break;
+
             }
         }
 
