@@ -4,6 +4,11 @@
     <TargetFramework>netcoreapp1.1</TargetFramework>
     <AssemblyName>Marimo.LinqToDejizo</AssemblyName>
     <RootNamespace>Marimo.LinqToDejizo</RootNamespace>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Version>0.0.1</Version>
+    <Authors>Marimo</Authors>
+    <Company />
+    <Description />
   </PropertyGroup>
 
   <ItemGroup>
