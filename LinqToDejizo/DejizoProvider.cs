@@ -58,11 +58,6 @@ namespace Marimo.LinqToDejizo
         private Func<DejizoItem, object> GetSelectLambda(SearchDicItemCondition condition) =>
             (Func<DejizoItem, object>)condition.SelectLambda?.Compile() ?? (x => x);
 
-        private MethodInfo GetMethod<S, T>(Expression<Func<IEnumerable<S>, T>> method)
-        {
-            return null;
-        }
-
         private void ParseLinqRoot(Expression expression, SearchDicItemCondition condition)
         {
             var count = GetInfo<IQueryable<object>>(c => c.Count()).GetGenericMethodDefinition();

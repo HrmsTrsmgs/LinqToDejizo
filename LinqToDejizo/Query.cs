@@ -20,8 +20,8 @@ namespace Marimo.LinqToDejizo
         public Expression Expression => expression;
 
         public IQueryProvider Provider => provider;
-        public IEnumerator<T> GetEnumerator() => ((IEnumerable)this.provider.Execute(this.expression)).Cast<T>().GetEnumerator();
-        IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
+        public IEnumerator<T> GetEnumerator() => ((IEnumerable)provider.Execute(expression)).Cast<T>().GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
 
 
@@ -29,7 +29,7 @@ namespace Marimo.LinqToDejizo
         {
             this.provider = provider ?? throw new ArgumentNullException(nameof(provider));
 
-            this.expression = Expression.Constant(this);
+            expression = Expression.Constant(this);
 
         }
 
@@ -60,7 +60,7 @@ namespace Marimo.LinqToDejizo
         public override string ToString()
         {
 
-            return this.provider.GetQueryText(this.expression);
+            return provider.GetQueryText(expression);
 
         }
 
