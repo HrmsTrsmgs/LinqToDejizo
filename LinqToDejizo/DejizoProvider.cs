@@ -15,27 +15,26 @@ namespace Marimo.LinqToDejizo
 
         public override object Execute(Expression expression)
         {
-            SearchDicItemResult itemsInfo = null;
-            IEnumerable<GetDicItemResult> items = null;
             SearchDicItemCondition condition = new SearchDicItemCondition();
 
             ParseLinqRoot(expression, condition);
 
-            Task.Run(async () =>
-            {
-                itemsInfo = await client.SearchDicItemLite(condition);
-
-                IEnumerable<GetDicItemResult> GetResults()
+            (var itemsInfo, var items) =
+                Task.Run(async () =>
                 {
-                    foreach (var item in itemsInfo.TitleList)
+                    var titles = await client.SearchDicItemLite(condition);
+
+                    IEnumerable<GetDicItemResult> GetResults()
                     {
-                        yield return client.GetDicItemLite(item.ItemID).GetAwaiter().GetResult();
+                        foreach (var item in titles.TitleList)
+                        {
+                            yield return client.GetDicItemLite(item.ItemID).GetAwaiter().GetResult();
+                        }
                     }
-                }
 
-                items = GetResults();
+                    return (titles, GetResults());
 
-            }).GetAwaiter().GetResult();
+                }).GetAwaiter().GetResult();
 
             var selectLambda = (Func<DejizoItem, object>)condition.SelectLambda?.Compile() ?? (x => x);
 
@@ -58,7 +57,7 @@ namespace Marimo.LinqToDejizo
             }
         }
 
-        private MethodInfo GetMethod<S,T>(Expression<Func<IEnumerable<S>,T>> method)
+        private MethodInfo GetMethod<S, T>(Expression<Func<IEnumerable<S>, T>> method)
         {
             return null;
         }
@@ -87,11 +86,11 @@ namespace Marimo.LinqToDejizo
                     ParseWherePart(condition, m);
                     break;
                 case MethodCallExpression m when m.Method.Name == "Select":
-                    switch(m.Arguments[0])
+                    switch (m.Arguments[0])
                     {
                         case MethodCallExpression mm:
                             ParseWherePart(condition, mm);
-                            switch(m.Arguments[1])
+                            switch (m.Arguments[1])
                             {
                                 case UnaryExpression u:
                                     switch (u.Operand)
@@ -100,10 +99,10 @@ namespace Marimo.LinqToDejizo
                                             condition.SelectLambda = l;
                                             break;
                                     }
-                                            
-                                break;
+
+                                    break;
                             }
-                            
+
                             break;
                     }
                     break;
