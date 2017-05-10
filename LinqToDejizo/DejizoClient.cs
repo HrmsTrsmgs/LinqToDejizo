@@ -34,7 +34,7 @@ namespace Marimo.LinqToDejizo
                         {"Match", condition.Match},
                         {"Merge", "AND"},
                         {"Prof", "XHTML"},
-                        {"PageSize", "20"},
+                        {"PageSize", "100"},
                         {"PageIndex", "0"}
                     });
 

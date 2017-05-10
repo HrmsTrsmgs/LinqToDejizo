@@ -10,6 +10,8 @@ namespace Marimo.LinqToDejizo
         public string ResultType { get; set; }
         public string Word { get; set; }
         public string Match { get; set; }
+
+        public string Scope { get; set; }
         public LambdaExpression SelectLambda { get; set; }
     }
 }

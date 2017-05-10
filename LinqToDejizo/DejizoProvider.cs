@@ -202,8 +202,36 @@ namespace Marimo.LinqToDejizo
                                     break;
                                 case BinaryExpression b:
                                     condition.Match = "EXACT";
-                                    WordConstant(b.Right, condition);
-                                    WordConstant(b.Left, condition);
+                                    switch(b.Right)
+                                    {
+                                        case ConstantExpression c:
+                                            WordConstant(b.Right, condition);
+                                            switch (b.Left)
+                                            {
+                                                case MemberExpression m:
+                                                    if(m.Member.Name == "HeaderText")
+                                                    {
+                                                        condition.Scope = "HEADWORD";
+                                                    }
+                                                    break;
+                                            }
+                                            break;
+                                        case MemberExpression m:
+                                            WordConstant(b.Left, condition);
+                                            switch (b.Right)
+                                            {
+                                                case MemberExpression mm:
+                                                    if (mm.Member.Name == "HeaderText")
+                                                    {
+                                                        condition.Scope = "HEADWORD";
+                                                    }
+                                                    break;
+                                            }
+                                            break;
+                                            break;
+                                    }
+                                    
+                                    
                                     break;
                             }
                             break;
@@ -212,6 +240,8 @@ namespace Marimo.LinqToDejizo
 
             }
         }
+
+
 
         private static void WordConstant(Expression expression, SearchDicItemCondition condition)
         {
