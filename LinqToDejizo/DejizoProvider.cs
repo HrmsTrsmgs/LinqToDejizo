@@ -65,9 +65,13 @@ namespace Marimo.LinqToDejizo
 
         private void ParseLinqRoot(Expression expression, SearchDicItemCondition condition)
         {
+            var count = GetInfo<IQueryable<object>>(c => c.Count()).GetGenericMethodDefinition();
+            var first = GetInfo<IQueryable<object>>(c => c.First()).GetGenericMethodDefinition();
+            var single = GetInfo<IQueryable<object>>(c => c.Single()).GetGenericMethodDefinition();
+
             switch (expression)
             {
-                case MethodCallExpression m when new[] { "Count", "First", "Single" }.Contains(m.Method.Name):
+                case MethodCallExpression m when new[] { count, first, single }.Contains(m.Method.GetGenericMethodDefinition()):
                     condition.ResultType = m.Method.Name;
                     ParseSelectItems(m.Arguments[0], condition);
                     break;
@@ -81,12 +85,15 @@ namespace Marimo.LinqToDejizo
 
         private  void ParseSelectItems(Expression expression, SearchDicItemCondition condition)
         {
+            var where = GetInfo<IQueryable<object>>(c => c.Where(x => true)).GetGenericMethodDefinition();
+            var select = GetInfo<IQueryable<object>>(c => c.Select(x => x)).GetGenericMethodDefinition();
+
             switch (expression)
             {
-                case MethodCallExpression m when m.Method.Name == "Where":
+                case MethodCallExpression m when m.Method.GetGenericMethodDefinition() == where:
                     ParseWherePart(condition, m);
                     break;
-                case MethodCallExpression m when m.Method.Name == "Select":
+                case MethodCallExpression m when m.Method.GetGenericMethodDefinition() == select:
                     switch (m.Arguments[0])
                     {
                         case MethodCallExpression mm:
@@ -108,6 +115,54 @@ namespace Marimo.LinqToDejizo
             }
         }
 
+        private MethodInfo GetInfo<TReceiver>(Expression<Func<TReceiver, object>> callExpression)
+        {
+            switch (callExpression)
+            {
+                case LambdaExpression l:
+                    switch (l.Body)
+                    {
+                        case UnaryExpression u:
+                            switch (u.Operand)
+                            {
+                                case MethodCallExpression m:
+                                    return m.Method;
+                                default:
+                                    throw new Exception();
+                            }
+                        case MethodCallExpression m:
+                            return m.Method;
+                        default:
+                            throw new Exception();
+                    }
+                default:
+                    throw new Exception();
+            }
+        }
+
+        private MethodInfo GetInfo<TReceiver, TIn>(Expression<Func<TReceiver, TIn, object>> callExpression)
+        {
+            switch (callExpression)
+            {
+                case LambdaExpression l:
+                    switch (l.Body)
+                    {
+                        case UnaryExpression u:
+                            switch (u.Operand)
+                            {
+                                case MethodCallExpression m:
+                                    return m.Method;
+                                default:
+                                    throw new Exception();
+                            }
+                        default:
+                            throw new Exception();
+                    }
+                default:
+                    throw new Exception();
+            }
+        }
+
         private void ParseWherePart(SearchDicItemCondition condition, MethodCallExpression expression)
         {
             switch (expression.Arguments[1])
@@ -119,16 +174,15 @@ namespace Marimo.LinqToDejizo
                             switch (l.Body)
                             {
                                 case MethodCallExpression m:
-
-                                    if (m.Method == typeof(string).GetMethod("EndsWith", new[] { typeof(string) }))
+                                    if (m.Method == GetInfo<string, string>((s, p) => s.EndsWith(p)))
                                     {
                                         condition.Match = "ENDWITH";
                                     }
-                                    else if (m.Method == typeof(string).GetMethod("StartsWith", new[] { typeof(string) }))
+                                    else if (m.Method == GetInfo<string, string>((s, p) => s.StartsWith(p)))
                                     {
                                         condition.Match = "STARTWITH";
                                     }
-                                    else if (m.Method == typeof(string).GetMethod("Contains", new[] { typeof(string) }))
+                                    else if (m.Method == GetInfo<string, string>((s, p) => s.Contains(p)))
                                     {
                                         condition.Match = "CONTAIN";
                                     }
