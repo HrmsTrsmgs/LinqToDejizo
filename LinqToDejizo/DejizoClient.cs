@@ -30,7 +30,7 @@ namespace Marimo.LinqToDejizo
                     {
                         {"Dic", "EJdict"},
                         {"Word", condition.Word},
-                        {"Scope", "HEADWORD"},
+                        {"Scope", condition.Scope},
                         {"Match", condition.Match},
                         {"Merge", "AND"},
                         {"Prof", "XHTML"},

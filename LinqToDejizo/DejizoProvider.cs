@@ -189,14 +189,17 @@ namespace Marimo.LinqToDejizo
                                     if (m.Method == GetInfo<string, string>((s, p) => s.EndsWith(p)))
                                     {
                                         condition.Match = "ENDWITH";
+                                        condition.Scope = "HEADWORD";
                                     }
                                     else if (m.Method == GetInfo<string, string>((s, p) => s.StartsWith(p)))
                                     {
                                         condition.Match = "STARTWITH";
+                                        condition.Scope = "HEADWORD";
                                     }
                                     else if (m.Method == GetInfo<string, string>((s, p) => s.Contains(p)))
                                     {
                                         condition.Match = "CONTAIN";
+                                        condition.Scope = "HEADWORD";
                                     }
                                     WordConstant(m.Arguments[0], condition);
                                     break;
@@ -211,7 +214,7 @@ namespace Marimo.LinqToDejizo
                                                 case MemberExpression m:
                                                     if(m.Member.Name == "HeaderText")
                                                     {
-                                                        condition.Scope = "HEADWORD";
+                                                        condition.Scope = "HEADWORD"; 
                                                     }
                                                     break;
                                             }
