@@ -11,8 +11,25 @@ namespace Marimo.LinqToDejizo
 {
     public class DejizoProvider : QueryProvider
     {
-        DejizoClient client = new DejizoClient();
+        public DejizoProvider()
+        {
+            client = new DejizoClient();
+            client.Requested += (sender, e) =>
+            {
+                Requested?.Invoke(this, e);
+            };
+            client.Responsed += (sender, e) =>
+            {
+                Responsed?.Invoke(this, e);
+            };
+        }
 
+        public event EventHandler<DejizoRequestEventArgs> Requested;
+        public event EventHandler<DejizoResponseEventArgs> Responsed;
+
+
+        DejizoClient client;
+        
         public override object Execute(Expression expression)
         {
             SearchDicItemCondition condition = new SearchDicItemCondition();

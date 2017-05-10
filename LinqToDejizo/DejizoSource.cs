@@ -16,6 +16,23 @@ namespace Marimo.LinqToDejizo
 {
     public class DejizoSource
     {
-        public IQueryable<DejizoItem> EJdict { get; set; } = new Query<DejizoItem>(new DejizoProvider());
+        public event EventHandler<DejizoRequestEventArgs> Requested;
+        public event EventHandler<DejizoResponseEventArgs> Responsed;
+
+        public IQueryable<DejizoItem> EJdict { get; private set; }
+
+        public DejizoSource()
+        {
+            var provider = new DejizoProvider();
+            provider.Requested += (sender, e) =>
+            {
+                Requested?.Invoke(this, e);
+            };
+            provider.Responsed += (sender, e) =>
+            {
+                Responsed?.Invoke(this, e);
+            };
+            EJdict = new Query<DejizoItem>(provider);
+        }
     }
 }

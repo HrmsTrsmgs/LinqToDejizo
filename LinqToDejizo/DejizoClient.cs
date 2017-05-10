@@ -11,16 +11,18 @@ namespace Marimo.LinqToDejizo
 {
     public class DejizoClient
     {
+        public event EventHandler<DejizoRequestEventArgs> Requested;
+        public event EventHandler<DejizoResponseEventArgs> Responsed;
         public TimeSpan Interval { get; set; } = new TimeSpan(0, 0, 0, 60);
 
         static DateTime lastGettingTime = DateTime.MinValue;
 
-        HttpClient client = new HttpClient();
+        static HttpClient client = new HttpClient();
 
         public async Task<SearchDicItemResult> SearchDicItemLite(SearchDicItemCondition condition)
         {
             await Wait();
-
+            
             var uri =
                 QueryHelpers.AddQueryString(
                     "http://public.dejizo.jp/NetDicV09.asmx/SearchDicItemLite",
@@ -36,10 +38,13 @@ namespace Marimo.LinqToDejizo
                         {"PageIndex", "0"}
                     });
 
+            Requested?.Invoke(this, new DejizoRequestEventArgs { Uri = new Uri(uri) });
             var response = await client.GetAsync(uri);
 
-            var stream = await response.Content.ReadAsStreamAsync();
+            Responsed?.Invoke(this, new DejizoResponseEventArgs { Uri = new Uri(uri), ResponseJon = await response.Content.ReadAsStringAsync() });
 
+            var stream = await response.Content.ReadAsStreamAsync();
+            
             var serializer = new DataContractSerializer(typeof(SearchDicItemResult));
 
             return serializer.ReadObject(stream) as SearchDicItemResult;
@@ -47,7 +52,7 @@ namespace Marimo.LinqToDejizo
 
         public async Task<GetDicItemResult> GetDicItemLite(string itemId)
         {
-
+            await Wait();
             var uri =
                 QueryHelpers.AddQueryString(
                     "http://public.dejizo.jp/NetDicV09.asmx/GetDicItemLite",
@@ -58,9 +63,10 @@ namespace Marimo.LinqToDejizo
                             {"Loc", ""},
                             {"Prof", "XHTML"}
                     });
-
+            Requested?.Invoke(this, new DejizoRequestEventArgs { Uri = new Uri(uri) });
             var response = await client.GetAsync(uri);
-
+            
+            Responsed?.Invoke(this, new DejizoResponseEventArgs { Uri = new Uri(uri), ResponseJon = await response.Content.ReadAsStringAsync() });
             var stream = await response.Content.ReadAsStreamAsync();
 
             var serializer = new DataContractSerializer(typeof(GetDicItemResult));
