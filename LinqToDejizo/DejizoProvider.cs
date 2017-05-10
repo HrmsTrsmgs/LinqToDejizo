@@ -36,11 +36,9 @@ namespace Marimo.LinqToDejizo
 
                 }).GetAwaiter().GetResult();
 
-            var selectLambda = (Func<DejizoItem, object>)condition.SelectLambda?.Compile() ?? (x => x);
-
             var query =
                 from item in items
-                select selectLambda(new DejizoItem(item));
+                select GetSelectLambda(condition)(new DejizoItem(item));
 
             switch (condition.ResultType)
             {
@@ -56,6 +54,9 @@ namespace Marimo.LinqToDejizo
                     return null;
             }
         }
+
+        private Func<DejizoItem, object> GetSelectLambda(SearchDicItemCondition condition) =>
+            (Func<DejizoItem, object>)condition.SelectLambda?.Compile() ?? (x => x);
 
         private MethodInfo GetMethod<S, T>(Expression<Func<IEnumerable<S>, T>> method)
         {
@@ -78,7 +79,7 @@ namespace Marimo.LinqToDejizo
             }
         }
 
-        private static void ParseSelectItems(Expression expression, SearchDicItemCondition condition)
+        private  void ParseSelectItems(Expression expression, SearchDicItemCondition condition)
         {
             switch (expression)
             {
@@ -90,26 +91,24 @@ namespace Marimo.LinqToDejizo
                     {
                         case MethodCallExpression mm:
                             ParseWherePart(condition, mm);
-                            switch (m.Arguments[1])
+                            break;
+                    }
+                    switch (m.Arguments[1])
+                    {
+                        case UnaryExpression u:
+                            switch (u.Operand)
                             {
-                                case UnaryExpression u:
-                                    switch (u.Operand)
-                                    {
-                                        case LambdaExpression l:
-                                            condition.SelectLambda = l;
-                                            break;
-                                    }
-
+                                case LambdaExpression l:
+                                    condition.SelectLambda = l;
                                     break;
                             }
-
                             break;
                     }
                     break;
             }
         }
 
-        private static void ParseWherePart(SearchDicItemCondition condition, MethodCallExpression expression)
+        private void ParseWherePart(SearchDicItemCondition condition, MethodCallExpression expression)
         {
             switch (expression.Arguments[1])
             {
