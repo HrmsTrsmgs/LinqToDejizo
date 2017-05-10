@@ -52,7 +52,7 @@ namespace Marimo.LinqToDejizo
         S IQueryProvider.Execute<S>(Expression expression)
         {
 
-            return (S)this.Execute(expression);
+            return (S)Execute(expression);
 
         }
 
@@ -61,7 +61,7 @@ namespace Marimo.LinqToDejizo
         object IQueryProvider.Execute(Expression expression)
         {
 
-            return this.Execute(expression);
+            return Execute(expression);
 
         }
 
