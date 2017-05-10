@@ -203,6 +203,7 @@ namespace Marimo.LinqToDejizo
                                 case BinaryExpression b:
                                     condition.Match = "EXACT";
                                     WordConstant(b.Right, condition);
+                                    WordConstant(b.Left, condition);
                                     break;
                             }
                             break;

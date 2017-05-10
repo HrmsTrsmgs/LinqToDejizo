@@ -87,6 +87,19 @@ namespace Marimo.LinqToDejizo.Test
         }
 
         [Fact]
+        public void 英和辞書で完全一致検索は左辺等辺がどちらでもできます()
+        {
+            var tested = new DejizoSource();
+
+            var query =
+                from item in tested.EJdict
+                where "dictionary" == item.HeaderText
+                select item;
+
+            query.Count().Is(1);
+        }
+
+        [Fact]
         public void 英和辞書で取得したものに対してイテレーションが利きます()
         {
             var tested = new DejizoSource();
@@ -192,6 +205,20 @@ namespace Marimo.LinqToDejizo.Test
                 select item.HeaderText;
 
             query.First().Is("dict.");
+        }
+
+        [Fact]
+        public void Selectでオブジェクトの組み立てができます()
+        {
+            var tested = new DejizoSource();
+
+            var query =
+                from item in tested.EJdict
+                where item.HeaderText.StartsWith("dict")
+                select new { item.HeaderText, item.BodyText };
+
+            query.First().HeaderText.Is("dict.");
+            query.First().BodyText.Is("ｄｉｃｔａｔｉｏｎ	ｄｉｃｔａｔｏｒ	ｄｉｃｔｉｏｎａｒｙ");
         }
     }
 }
