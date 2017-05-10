@@ -15,48 +15,38 @@ namespace Marimo.LinqToDejizo
 
         public override object Execute(Expression expression)
         {
-            SearchDicItemResult result = null;
-            IEnumerable<GetDicItemResult> results = null;
+            SearchDicItemResult itemsInfo = null;
+            IEnumerable<GetDicItemResult> items = null;
             SearchDicItemCondition condition = new SearchDicItemCondition();
+
+            ParseLinqRoot(expression, condition);
+
             Task.Run(async () =>
             {
-                switch (expression)
-                {
-                    case MethodCallExpression m when new[] { "Count", "First", "Single" }.Contains(m.Method.Name):
-                        condition.ResultType = m.Method.Name;
-                        SelectItems(m.Arguments[0], condition);
-                        break;
-                    case MethodCallExpression m:
-                        condition.ResultType = "SelectItems";
-                        SelectItems(m, condition);
-                        break;
-
-                }
-                result = await client.SearchDicItemLite(condition);
+                itemsInfo = await client.SearchDicItemLite(condition);
 
                 IEnumerable<GetDicItemResult> GetResults()
                 {
-                    foreach(var item in result.TitleList)
+                    foreach (var item in itemsInfo.TitleList)
                     {
                         yield return client.GetDicItemLite(item.ItemID).GetAwaiter().GetResult();
                     }
                 }
 
-                results = GetResults();
+                items = GetResults();
 
             }).GetAwaiter().GetResult();
 
+            var selectLambda = (Func<DejizoItem, object>)condition.SelectLambda?.Compile() ?? (x => x);
 
-
-            IEnumerable<object> query =
-                from item in results
-                let dejizoItem = new DejizoItem(item)
-                select condition.SelectLambda == null ? dejizoItem : ((Func<DejizoItem, object>)condition.SelectLambda.Compile())(dejizoItem);
+            var query =
+                from item in items
+                select selectLambda(new DejizoItem(item));
 
             switch (condition.ResultType)
             {
                 case "Count":
-                    return result.TotalHitCount;
+                    return itemsInfo.TotalHitCount;
                 case "First":
                     return query.First();
                 case "Single":
@@ -66,21 +56,41 @@ namespace Marimo.LinqToDejizo
                 default:
                     return null;
             }
-            
         }
 
-        private static void SelectItems(Expression expression, SearchDicItemCondition condition)
+        private MethodInfo GetMethod<S,T>(Expression<Func<IEnumerable<S>,T>> method)
+        {
+            return null;
+        }
+
+        private void ParseLinqRoot(Expression expression, SearchDicItemCondition condition)
+        {
+            switch (expression)
+            {
+                case MethodCallExpression m when new[] { "Count", "First", "Single" }.Contains(m.Method.Name):
+                    condition.ResultType = m.Method.Name;
+                    ParseSelectItems(m.Arguments[0], condition);
+                    break;
+                case MethodCallExpression m:
+                    condition.ResultType = "SelectItems";
+                    ParseSelectItems(m, condition);
+                    break;
+
+            }
+        }
+
+        private static void ParseSelectItems(Expression expression, SearchDicItemCondition condition)
         {
             switch (expression)
             {
                 case MethodCallExpression m when m.Method.Name == "Where":
-                    Where(condition, m);
+                    ParseWherePart(condition, m);
                     break;
                 case MethodCallExpression m when m.Method.Name == "Select":
                     switch(m.Arguments[0])
                     {
                         case MethodCallExpression mm:
-                            Where(condition, mm);
+                            ParseWherePart(condition, mm);
                             switch(m.Arguments[1])
                             {
                                 case UnaryExpression u:
@@ -100,9 +110,9 @@ namespace Marimo.LinqToDejizo
             }
         }
 
-        private static void Where(SearchDicItemCondition condition, MethodCallExpression m)
+        private static void ParseWherePart(SearchDicItemCondition condition, MethodCallExpression expression)
         {
-            switch (m.Arguments[1])
+            switch (expression.Arguments[1])
             {
                 case UnaryExpression u:
                     switch (u.Operand)
@@ -110,21 +120,21 @@ namespace Marimo.LinqToDejizo
                         case LambdaExpression l:
                             switch (l.Body)
                             {
-                                case MethodCallExpression mmm:
+                                case MethodCallExpression m:
 
-                                    if (mmm.Method == typeof(string).GetMethod("EndsWith", new[] { typeof(string) }))
+                                    if (m.Method == typeof(string).GetMethod("EndsWith", new[] { typeof(string) }))
                                     {
                                         condition.Match = "ENDWITH";
                                     }
-                                    else if (mmm.Method == typeof(string).GetMethod("StartsWith", new[] { typeof(string) }))
+                                    else if (m.Method == typeof(string).GetMethod("StartsWith", new[] { typeof(string) }))
                                     {
                                         condition.Match = "STARTWITH";
                                     }
-                                    else if (mmm.Method == typeof(string).GetMethod("Contains", new[] { typeof(string) }))
+                                    else if (m.Method == typeof(string).GetMethod("Contains", new[] { typeof(string) }))
                                     {
                                         condition.Match = "CONTAIN";
                                     }
-                                    WordConstant(mmm.Arguments[0], condition);
+                                    WordConstant(m.Arguments[0], condition);
                                     break;
                                 case BinaryExpression b:
                                     condition.Match = "EXACT";
