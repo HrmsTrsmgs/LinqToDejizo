@@ -97,6 +97,12 @@ namespace Marimo.LinqToDejizo
 
         private  void ParseSelectItems(Expression expression, SearchDicItemCondition condition)
         {
+            var selectLambda = new LambdaParser();
+
+            var unary = new UnaryParser { Operand = selectLambda };
+
+            selectLambda.Action = l => condition.SelectLambda = l;
+        
             var where = GetInfo<IQueryable<object>>(c => c.Where(x => true)).GetGenericMethodDefinition();
             var select = GetInfo<IQueryable<object>>(c => c.Select(x => x)).GetGenericMethodDefinition();
 
@@ -112,19 +118,51 @@ namespace Marimo.LinqToDejizo
                             ParseWherePart(condition, mm);
                             break;
                     }
-                    switch (m.Arguments[1])
-                    {
-                        case UnaryExpression u:
-                            switch (u.Operand)
-                            {
-                                case LambdaExpression l:
-                                    condition.SelectLambda = l;
-                                    break;
-                            }
-                            break;
-                    }
+                    unary.Parse(m.Arguments[1]);
                     break;
             }
+        }
+
+        public abstract class ExpressionParser
+        {
+            protected abstract IEnumerable<ExpressionParser> Children { get; }
+            public abstract bool Parse(Expression expression);
+        }
+
+        public abstract class ExpressionParser<T> : ExpressionParser where T : Expression
+        {
+            public Action<T> Action { get; set; }
+
+            public override bool Parse(Expression expression)
+            {
+                switch (expression)
+                {
+                    case T t:
+                        foreach(var child in Children)
+                        {
+                            if (!child.Parse(((UnaryExpression)(object)t).Operand))
+                            {
+                                return false;
+                            }
+                        }
+                        Action?.Invoke(t);
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+        }
+
+        public class UnaryParser : ExpressionParser<UnaryExpression>
+        {
+            public LambdaParser Operand { get; set; }
+
+            protected override IEnumerable<ExpressionParser> Children => new[] { (ExpressionParser)Operand };
+        }
+
+        public class LambdaParser : ExpressionParser<LambdaExpression>
+        {
+            protected override IEnumerable<ExpressionParser> Children => new ExpressionParser[] { };
         }
 
         private MethodInfo GetInfo<TReceiver>(Expression<Func<TReceiver, object>> callExpression)
