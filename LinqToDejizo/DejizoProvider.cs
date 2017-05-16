@@ -125,22 +125,31 @@ namespace Marimo.LinqToDejizo
 
         public abstract class ExpressionParser
         {
-            protected abstract IEnumerable<ExpressionParser> Children { get; }
             public abstract bool Parse(Expression expression);
         }
 
         public abstract class ExpressionParser<T> : ExpressionParser where T : Expression
         {
+            public ExpressionParser() { }
+
+            public ExpressionParser(Func<T, bool> condition)
+            {
+                this.condition = condition;
+            }
+
+            Func<T, bool> condition;
+
+            protected virtual IEnumerable<(ExpressionParser, Func<T, Expression>)> Children => new(ExpressionParser, Func<T, Expression>)[] { };
             public Action<T> Action { get; set; }
 
             public override bool Parse(Expression expression)
             {
                 switch (expression)
                 {
-                    case T t:
+                    case T t when condition?.Invoke(t) ?? true:
                         foreach(var child in Children)
                         {
-                            if (!child.Parse(((UnaryExpression)(object)t).Operand))
+                            if (!child.Item1.Parse(child.Item2(t)))
                             {
                                 return false;
                             }
@@ -157,13 +166,22 @@ namespace Marimo.LinqToDejizo
         {
             public LambdaParser Operand { get; set; }
 
-            protected override IEnumerable<ExpressionParser> Children => new[] { (ExpressionParser)Operand };
+            protected override IEnumerable<(ExpressionParser, Func<UnaryExpression, Expression>)> Children => new(ExpressionParser, Func<UnaryExpression, Expression>)[] { (Operand, x => x.Operand) };
         }
 
         public class LambdaParser : ExpressionParser<LambdaExpression>
         {
-            protected override IEnumerable<ExpressionParser> Children => new ExpressionParser[] { };
         }
+
+        public class ConstantParser : ExpressionParser<ConstantExpression>
+        {
+        }
+        public class MemberParser : ExpressionParser<MemberExpression>
+        {
+            public MemberParser() { }
+            public MemberParser(Func<MemberExpression, bool> condition) : base(condition) { }
+        }
+
 
         private MethodInfo GetInfo<TReceiver>(Expression<Func<TReceiver, object>> callExpression)
         {
@@ -215,6 +233,14 @@ namespace Marimo.LinqToDejizo
 
         private void ParseWherePart(SearchDicItemCondition condition, MethodCallExpression expression)
         {
+            var word = new ConstantParser();
+            word.Action = x => condition.Word = (string)x.Value;
+
+            var header = new MemberParser(x => x.Member.Name == "HeaderText");
+            header.Action = x =>
+            {
+                condition.Scope = "HEADWORD";
+            };
             switch (expression.Arguments[1])
             {
                 case UnaryExpression u:
@@ -239,64 +265,31 @@ namespace Marimo.LinqToDejizo
                                         condition.Match = "CONTAIN";
                                         condition.Scope = "HEADWORD";
                                     }
-                                    WordConstant(m.Arguments[0], condition);
+                                    word.Parse(m.Arguments[0]);
+                                    
                                     break;
                                 case BinaryExpression b:
                                     condition.Match = "EXACT";
-                                    switch(b.Right)
+                                    var constant = new ConstantParser();
+                                    var member = new MemberParser();
+                                    constant.Action = x =>
                                     {
-                                        case ConstantExpression c:
-                                            WordConstant(b.Right, condition);
-                                            switch (b.Left)
-                                            {
-                                                case MemberExpression m:
-                                                    if(m.Member.Name == "HeaderText")
-                                                    {
-                                                        condition.Scope = "HEADWORD"; 
-                                                    }
-                                                    break;
-                                            }
-                                            break;
-                                        case MemberExpression m:
-                                            WordConstant(b.Left, condition);
-                                            switch (b.Right)
-                                            {
-                                                case MemberExpression mm:
-                                                    if (mm.Member.Name == "HeaderText")
-                                                    {
-                                                        condition.Scope = "HEADWORD";
-                                                    }
-                                                    break;
-                                            }
-                                            break;
-                                            break;
-                                    }
-                                    
-                                    
+                                        word.Parse(b.Right);
+                                        header.Parse(b.Left);
+                                    };
+                                    member.Action = x =>
+                                    {
+                                        word.Parse(b.Left);
+                                        header.Parse(b.Right);
+                                    };
+                                    constant.Parse(b.Right);
+                                    member.Parse(b.Right);
                                     break;
                             }
                             break;
                     }
                     break;
 
-            }
-        }
-
-
-
-        private static void WordConstant(Expression expression, SearchDicItemCondition condition)
-        {
-            switch (expression)
-            {
-                case ConstantExpression c:
-                    switch (c.Value)
-                    {
-                        case string s:
-                            condition.Word = s;
-                            break;
-                    }
-
-                    break;
             }
         }
 
