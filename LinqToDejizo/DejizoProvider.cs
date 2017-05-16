@@ -167,18 +167,25 @@ namespace Marimo.LinqToDejizo
                 Body = new OrParser(binary, call)
             };
 
-            var unary2= new UnaryParser()
+            var unary2= new UnaryParser
             {
                 Operand = lambda
             };
 
-            
+            var whereMethod = new MethodCallParser(m => m.Method.GetGenericMethodDefinition() == where)
+            {
+                Arguments = new[] {null, unary2 }
+            };
+            var selectMethod = new MethodCallParser(m => m.Method.GetGenericMethodDefinition() == select);
+
+
+            whereMethod.Parse(expression);
 
             switch (expression)
             {
-                case MethodCallExpression m when m.Method.GetGenericMethodDefinition() == where:
-                    unary2.Parse(m.Arguments[1]);
-                    break;
+                //case MethodCallExpression m when m.Method.GetGenericMethodDefinition() == where:
+                //    unary2.Parse(m.Arguments[1]);
+                //    break;
                 case MethodCallExpression m when m.Method.GetGenericMethodDefinition() == select:
                     switch (m.Arguments[0])
                     {
@@ -316,7 +323,8 @@ namespace Marimo.LinqToDejizo
             protected override IEnumerable<(ExpressionParser, Func<MethodCallExpression, Expression>)> Children =>
                 new(ExpressionParser, Func<MethodCallExpression, Expression>)[]
                 {
-                    (Arguments[0], x => x.Arguments[0])
+                    (Arguments.Any() ? Arguments[0] : null, x => x.Arguments.Any() ? x.Arguments[0] : null),
+                    (2 <= Arguments.Count() ? Arguments[1] : null, x => 2 <= x.Arguments.Count ? x.Arguments[1] : null),
                 };
             public MethodCallParser() { }
             public MethodCallParser(Func<MethodCallExpression, bool> condition) : base(condition) { }
