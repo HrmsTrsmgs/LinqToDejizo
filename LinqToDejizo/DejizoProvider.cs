@@ -106,16 +106,84 @@ namespace Marimo.LinqToDejizo
             var where = GetInfo<IQueryable<object>>(c => c.Where(x => true)).GetGenericMethodDefinition();
             var select = GetInfo<IQueryable<object>>(c => c.Select(x => x)).GetGenericMethodDefinition();
 
+            var word = new ConstantParser();
+            word.Action = x => condition.Word = (string)x.Value;
+
+            var header = new MemberParser(x => x.Member.Name == "HeaderText");
+            header.Action = x =>
+            {
+                condition.Scope = "HEADWORD";
+            };
+            var binary1 = new BinaryParser()
+            {
+                Left = word,
+                Right = header
+            };
+            var binary2 = new BinaryParser()
+            {
+                Left = header,
+                Right = word
+            };
+
+            var binary = new OrParser<BinaryExpression>(binary1, binary2);
+            binary.Action = _ =>
+            {
+                condition.Match = "EXACT";
+            };
+
+            var call1 = new MethodCallParser(m => m.Method == GetInfo<string, string>((s, p) => s.EndsWith(p)))
+            {
+                Arguments = new[] { word }
+            };
+
+            call1.Action = m =>
+            {
+                condition.Match = "ENDWITH";
+                condition.Scope = "HEADWORD";
+            };
+            var call2 = new MethodCallParser(m => m.Method == GetInfo<string, string>((s, p) => s.StartsWith(p)))
+            {
+                Arguments = new[] { word }
+            };
+            call2.Action = m =>
+            {
+                condition.Match = "STARTWITH";
+                condition.Scope = "HEADWORD";
+            };
+            var call3 = new MethodCallParser(m => m.Method == GetInfo<string, string>((s, p) => s.Contains(p)))
+            {
+                Arguments = new[] { word }
+            };
+            call3.Action = m =>
+            {
+                condition.Match = "CONTAIN";
+                condition.Scope = "HEADWORD";
+            };
+
+            var call = new OrParser<MethodCallExpression>(new OrParser<MethodCallExpression>(call1, call2), call3);
+
+            var lambda = new LambdaParser
+            {
+                Body = new OrParser(binary, call)
+            };
+
+            var unary2= new UnaryParser()
+            {
+                Operand = lambda
+            };
+
+            
+
             switch (expression)
             {
                 case MethodCallExpression m when m.Method.GetGenericMethodDefinition() == where:
-                    ParseWherePart(condition, m);
+                    unary2.Parse(m.Arguments[1]);
                     break;
                 case MethodCallExpression m when m.Method.GetGenericMethodDefinition() == select:
                     switch (m.Arguments[0])
                     {
                         case MethodCallExpression mm:
-                            ParseWherePart(condition, mm);
+                            unary2.Parse(mm.Arguments[1]);
                             break;
                     }
                     unary.Parse(m.Arguments[1]);
@@ -125,6 +193,7 @@ namespace Marimo.LinqToDejizo
 
         public abstract class ExpressionParser
         {
+            public Action Action { get; set; }
             public abstract bool Parse(Expression expression);
         }
 
@@ -140,7 +209,7 @@ namespace Marimo.LinqToDejizo
             Func<T, bool> condition;
 
             protected virtual IEnumerable<(ExpressionParser, Func<T, Expression>)> Children => new(ExpressionParser, Func<T, Expression>)[] { };
-            public Action<T> Action { get; set; }
+            public new Action<T> Action { get; set; }
 
             public override bool Parse(Expression expression)
             {
@@ -149,7 +218,7 @@ namespace Marimo.LinqToDejizo
                     case T t when condition?.Invoke(t) ?? true:
                         foreach(var child in Children)
                         {
-                            if (!child.Item1.Parse(child.Item2(t)))
+                            if (!child.Item1?.Parse(child.Item2(t)) ?? false)
                             {
                                 return false;
                             }
@@ -162,15 +231,95 @@ namespace Marimo.LinqToDejizo
             }
         }
 
+        public class OrParser : ExpressionParser
+        {
+            public ExpressionParser Left { get; set; }
+            public ExpressionParser Right { get; set; }
+
+            public OrParser(ExpressionParser left, ExpressionParser right)
+            {
+                Left = left;
+                Right = right;
+            }
+            public override bool Parse(Expression expression)
+            {
+                if (Left.Parse(expression) || Right.Parse(expression))
+                {
+                    Action?.Invoke();
+                    return true;
+                }
+                return false;
+            }
+        }
+
+
+        public class OrParser<T> : ExpressionParser<T> where T : Expression
+        {
+            public ExpressionParser<T> Left { get; set; }
+            public ExpressionParser<T> Right { get; set; }
+
+            public OrParser(ExpressionParser<T> left, ExpressionParser<T> right)
+            {
+                Left = left;
+                Right = right;
+            }
+            public override bool Parse(Expression expression)
+            {
+                if(Left.Parse(expression) || Right.Parse(expression))
+                {
+                    Action?.Invoke(null);
+                    return true;
+                }
+                return false;
+            }
+        }
+
         public class UnaryParser : ExpressionParser<UnaryExpression>
         {
             public LambdaParser Operand { get; set; }
 
-            protected override IEnumerable<(ExpressionParser, Func<UnaryExpression, Expression>)> Children => new(ExpressionParser, Func<UnaryExpression, Expression>)[] { (Operand, x => x.Operand) };
+            protected override IEnumerable<(ExpressionParser, Func<UnaryExpression, Expression>)> Children => 
+                new(ExpressionParser, Func<UnaryExpression, Expression>)[] 
+                {
+                    (Operand, x => x.Operand)
+                };
+        }
+
+        public class BinaryParser : ExpressionParser<BinaryExpression>
+        {
+            public ExpressionParser Right { get; set; }
+            public ExpressionParser Left { get; set; }
+
+            protected override IEnumerable<(ExpressionParser, Func<BinaryExpression, Expression>)> Children =>
+                new(ExpressionParser, Func<BinaryExpression, Expression>)[]
+                {
+                    (Right, x => x.Right),
+                    (Left, x => x.Left),
+                };
         }
 
         public class LambdaParser : ExpressionParser<LambdaExpression>
         {
+            public ExpressionParser Body { get; set; }
+
+            protected override IEnumerable<(ExpressionParser, Func<LambdaExpression, Expression>)> Children =>
+                new(ExpressionParser, Func<LambdaExpression, Expression>)[]
+                {
+                    (Body, x => x.Body),
+                };
+        }
+
+        public class MethodCallParser : ExpressionParser<MethodCallExpression>
+        {
+            public ExpressionParser[] Arguments { get; set; } = new ExpressionParser[] { null, null };
+
+            protected override IEnumerable<(ExpressionParser, Func<MethodCallExpression, Expression>)> Children =>
+                new(ExpressionParser, Func<MethodCallExpression, Expression>)[]
+                {
+                    (Arguments[0], x => x.Arguments[0])
+                };
+            public MethodCallParser() { }
+            public MethodCallParser(Func<MethodCallExpression, bool> condition) : base(condition) { }
         }
 
         public class ConstantParser : ExpressionParser<ConstantExpression>
@@ -230,69 +379,6 @@ namespace Marimo.LinqToDejizo
                     throw new Exception();
             }
         }
-
-        private void ParseWherePart(SearchDicItemCondition condition, MethodCallExpression expression)
-        {
-            var word = new ConstantParser();
-            word.Action = x => condition.Word = (string)x.Value;
-
-            var header = new MemberParser(x => x.Member.Name == "HeaderText");
-            header.Action = x =>
-            {
-                condition.Scope = "HEADWORD";
-            };
-            switch (expression.Arguments[1])
-            {
-                case UnaryExpression u:
-                    switch (u.Operand)
-                    {
-                        case LambdaExpression l:
-                            switch (l.Body)
-                            {
-                                case MethodCallExpression m:
-                                    if (m.Method == GetInfo<string, string>((s, p) => s.EndsWith(p)))
-                                    {
-                                        condition.Match = "ENDWITH";
-                                        condition.Scope = "HEADWORD";
-                                    }
-                                    else if (m.Method == GetInfo<string, string>((s, p) => s.StartsWith(p)))
-                                    {
-                                        condition.Match = "STARTWITH";
-                                        condition.Scope = "HEADWORD";
-                                    }
-                                    else if (m.Method == GetInfo<string, string>((s, p) => s.Contains(p)))
-                                    {
-                                        condition.Match = "CONTAIN";
-                                        condition.Scope = "HEADWORD";
-                                    }
-                                    word.Parse(m.Arguments[0]);
-                                    
-                                    break;
-                                case BinaryExpression b:
-                                    condition.Match = "EXACT";
-                                    var constant = new ConstantParser();
-                                    var member = new MemberParser();
-                                    constant.Action = x =>
-                                    {
-                                        word.Parse(b.Right);
-                                        header.Parse(b.Left);
-                                    };
-                                    member.Action = x =>
-                                    {
-                                        word.Parse(b.Left);
-                                        header.Parse(b.Right);
-                                    };
-                                    constant.Parse(b.Right);
-                                    member.Parse(b.Right);
-                                    break;
-                            }
-                            break;
-                    }
-                    break;
-
-            }
-        }
-
         public override string GetQueryText(Expression expression)
         {
             return "query text";
