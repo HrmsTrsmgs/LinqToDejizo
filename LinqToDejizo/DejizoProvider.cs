@@ -18,7 +18,59 @@ namespace Marimo.LinqToDejizo
             {
                 Arguments = arguments.ToArray()
             };
-        
+        public static MethodCallParser MethodCall<TReceiver>(Expression<Func<TReceiver, object>> callExpression, IEnumerable<ExpressionParser> arguments)
+            => MethodCall(m => m.Method.GetGenericMethodDefinition() == GetInfo<TReceiver>(callExpression).GetGenericMethodDefinition(), arguments);
+
+
+
+        private static MethodInfo GetInfo<TReceiver>(Expression<Func<TReceiver, object>> callExpression)
+        {
+            switch (callExpression)
+            {
+                case LambdaExpression l:
+                    switch (l.Body)
+                    {
+                        case UnaryExpression u:
+                            switch (u.Operand)
+                            {
+                                case MethodCallExpression m:
+                                    return m.Method;
+                                default:
+                                    throw new Exception();
+                            }
+                        case MethodCallExpression m:
+                            return m.Method;
+                        default:
+                            throw new Exception();
+                    }
+                default:
+                    throw new Exception();
+            }
+        }
+
+        private static MethodInfo GetInfo<TReceiver, TIn>(Expression<Func<TReceiver, TIn, object>> callExpression)
+        {
+            switch (callExpression)
+            {
+                case LambdaExpression l:
+                    switch (l.Body)
+                    {
+                        case UnaryExpression u:
+                            switch (u.Operand)
+                            {
+                                case MethodCallExpression m:
+                                    return m.Method;
+                                default:
+                                    throw new Exception();
+                            }
+                        default:
+                            throw new Exception();
+                    }
+                default:
+                    throw new Exception();
+            }
+        }
+
     }
     public class DejizoProvider : QueryProvider
     {
@@ -88,9 +140,6 @@ namespace Marimo.LinqToDejizo
 
         private void ParseLinqRoot(Expression expression, SearchDicItemCondition condition)
         {
-            var count = GetInfo<IQueryable<object>>(c => c.Count()).GetGenericMethodDefinition();
-            var first = GetInfo<IQueryable<object>>(c => c.First()).GetGenericMethodDefinition();
-            var single = GetInfo<IQueryable<object>>(c => c.Single()).GetGenericMethodDefinition();
             var where = GetInfo<IQueryable<object>>(c => c.Where(x => true)).GetGenericMethodDefinition();
             var select = GetInfo<IQueryable<object>>(c => c.Select(x => x)).GetGenericMethodDefinition();
 
@@ -143,9 +192,9 @@ namespace Marimo.LinqToDejizo
                     new UnaryParser { Operand = selectLambda }
                 }
             };
-            var countCall = MethodCall(m => new[] { count }.Contains(m.Method.GetGenericMethodDefinition()), new[] { query });
-            var firstCall = MethodCall(m => new[] { first }.Contains(m.Method.GetGenericMethodDefinition()), new[] { query });
-            var singleCall = MethodCall(m => new[] { single }.Contains(m.Method.GetGenericMethodDefinition()), new[] { query });
+            var countCall = MethodCall<IQueryable<object>>(c => c.Count(), arguments: new[] { query });
+            var firstCall = MethodCall<IQueryable<object>>(c => c.First(), arguments: new[] { query });
+            var singleCall = MethodCall<IQueryable<object>>(c => c.Single(), arguments: new[] { query });
             var lastMethod = countCall | firstCall | singleCall;
 
             var wholeExtention = lastMethod | query;
@@ -172,7 +221,6 @@ namespace Marimo.LinqToDejizo
             countCall.Action = m => condition.ResultType = m.Method.Name;
             firstCall.Action = m => condition.ResultType = m.Method.Name;
             singleCall.Action = m => condition.ResultType = m.Method.Name;
-            //lastMethod.Action = m => condition.ResultType = m.Method.Name;
             query.Action = _ => condition.ResultType = "SelectItems";
 
             wholeExtention.Parse(expression);
