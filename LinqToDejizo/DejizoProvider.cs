@@ -6,9 +6,20 @@ using System.Text;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections;
+using static Marimo.LinqToDejizo.ParserCreaters;
+using static Marimo.LinqToDejizo.DejizoProvider;
 
 namespace Marimo.LinqToDejizo
 {
+    public static class ParserCreaters
+    {
+        public static MethodCallParser MethodCall(Func<MethodCallExpression, bool> condition, IEnumerable<ExpressionParser> arguments)
+        =>  new MethodCallParser(condition)
+            {
+                Arguments = arguments.ToArray()
+            };
+        
+    }
     public class DejizoProvider : QueryProvider
     {
         public DejizoProvider()
@@ -132,10 +143,10 @@ namespace Marimo.LinqToDejizo
                     new UnaryParser { Operand = selectLambda }
                 }
             };
-            var lastMethod = new MethodCallParser(m => new[] { count, first, single }.Contains(m.Method.GetGenericMethodDefinition()))
-            {
-                Arguments = new[] { query }
-            };
+            var countCall = MethodCall(m => new[] { count }.Contains(m.Method.GetGenericMethodDefinition()), new[] { query });
+            var firstCall = MethodCall(m => new[] { first }.Contains(m.Method.GetGenericMethodDefinition()), new[] { query });
+            var singleCall = MethodCall(m => new[] { single }.Contains(m.Method.GetGenericMethodDefinition()), new[] { query });
+            var lastMethod = countCall | firstCall | singleCall;
 
             var wholeExtention = lastMethod | query;
             
@@ -158,7 +169,10 @@ namespace Marimo.LinqToDejizo
                 condition.Match = "CONTAIN";
                 condition.Scope = "HEADWORD";
             };
-            lastMethod.Action = m => condition.ResultType = m.Method.Name;
+            countCall.Action = m => condition.ResultType = m.Method.Name;
+            firstCall.Action = m => condition.ResultType = m.Method.Name;
+            singleCall.Action = m => condition.ResultType = m.Method.Name;
+            //lastMethod.Action = m => condition.ResultType = m.Method.Name;
             query.Action = _ => condition.ResultType = "SelectItems";
 
             wholeExtention.Parse(expression);
