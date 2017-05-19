@@ -24,14 +24,36 @@ namespace Marimo.LinqToDejizo
         {
             Arguments = arguments.ToArray()
         };
-        public static MethodCallParser M<TReceiver>(Expression<Func<TReceiver, object>> callExpression, IEnumerable<ExpressionParser> arguments)
-            => MethodCall(m => m.Method.GetGenericMethodDefinition() == GetInfo<TReceiver>(callExpression).GetGenericMethodDefinition(), arguments);
+        public static MethodCallParser _<TReceiver>(Expression<Func<TReceiver, object>> callExpression, IEnumerable<ExpressionParser> arguments)
+            => MethodCall(m => m.Method.GetGenericMethodDefinition() == GetInfo(callExpression).GetGenericMethodDefinition(), arguments);
+
+        public static MethodCallParser _<TReceiver1, TReceiver2>(Expression<Func<TReceiver1, TReceiver2, object>> callExpression, IEnumerable<ExpressionParser> arguments)
+            => MethodCall(m => m.Method == GetInfo(callExpression), arguments);
 
         public static UnaryParser Unary(ExpressionParser operand)
             => new UnaryParser
             {
                 Operand = operand
             };
+
+        public static LambdaParser Lambda(ExpressionParser body = null)
+            => new LambdaParser
+            {
+                Body = body
+            };
+
+        public static BinaryParser Binary(ExpressionParser left, ExpressionParser right)
+            => new BinaryParser
+            {
+                Left = left,
+                Right = right
+            };
+
+        public static MemberParser Member(Func<MemberExpression, bool> condition)
+            => new MemberParser(condition);
+
+        public static ConstantParser Constant()
+            => new ConstantParser();
 
         private static MethodInfo GetInfo<TReceiver>(Expression<Func<TReceiver, object>> callExpression)
         {
@@ -150,61 +172,51 @@ namespace Marimo.LinqToDejizo
 
         private void ParseLinqRoot(Expression expression, SearchDicItemCondition condition)
         {
-            var selectLambda = new LambdaParser();
+            var selectLambda = Lambda();
 
-            var word = new ConstantParser();
-            var header = new MemberParser(x => x.Member.Name == "HeaderText");
+            var word = Constant();
 
-            var binary = new BinaryParser
-            {
-                Left = word,
-                Right = header
-            } | new BinaryParser
-            {
-                Left = header,
-                Right = word
-            };
+            var header = Member(x => x.Member.Name == "HeaderText");
 
-            var endsWith = new MethodCallParser(m => m.Method == GetInfo<string, string>((s, p) => s.EndsWith(p)))
-            {
-                Arguments = new[] { word }
-            };
-            var startsWith = new MethodCallParser(m => m.Method == GetInfo<string, string>((s, p) => s.StartsWith(p)))
-            {
-                Arguments = new[] { word }
-            };
-            var contains = new MethodCallParser(m => m.Method == GetInfo<string, string>((s, p) => s.Contains(p)))
-            {
-                Arguments = new[] { word }
-            };
-            var unary = new UnaryParser
-            {
-                Operand = new LambdaParser
-                {
-                    Body = binary | endsWith | startsWith | contains
-                }
-            };
+            var equals = Binary(word, header) | Binary(header, word);
+
+            var endsWith = 
+                _((string s, string p) => s.EndsWith(p),
+                    arguments: new[] { word });
+
+            var startsWith =
+                _((string s, string p) => s.StartsWith(p),
+                    arguments: new[] { word });
+
+            var contains = 
+                _((string s, string p) => s.Contains(p),
+                    arguments: new[] { word });
+
+            var cast = 
+                Unary(
+                    operand: Lambda(equals | endsWith | startsWith | contains));
+
             var query =
-                M((IQueryable<object> c) => c.Where(x => true),
-                    arguments: new[] { null, unary }) 
+                _((IQueryable<object> c) => c.Where(x => true),
+                    arguments: new[] { null, cast }) 
                 |
-                M((IQueryable<object> c) => c.Select(x => x),
+                _((IQueryable<object> c) => c.Select(x => x),
                     arguments: new ExpressionParser[]
                     {
                         MethodCall(
-                            arguments:new[]{null, unary }),
+                            arguments:new[]{ null, cast }),
                         Unary(
                             operand: selectLambda)
                     });
 
             var count =
-                M((IQueryable<object> c) => c.Count(),
+                _((IQueryable<object> c) => c.Count(),
                     arguments: new[] { query });
             var first =
-                M((IQueryable<object> c) => c.First(),
+                _((IQueryable<object> c) => c.First(),
                     arguments: new[] { query });
             var single =
-                M((IQueryable<object> c) => c.Single(),
+                _((IQueryable<object> c) => c.Single(),
                     arguments: new[] { query });
 
             var lastMethod = count | first | single;
@@ -214,7 +226,7 @@ namespace Marimo.LinqToDejizo
             selectLambda.Action = l => condition.SelectLambda = l;
             word.Action = x => condition.Word = (string)x.Value;
             header.Action = x => condition.Scope = "HEADWORD";
-            binary.Action = _ => condition.Match = "EXACT";
+            equals.Action = _ => condition.Match = "EXACT";
             endsWith.Action = m =>
             {
                 condition.Match = "ENDWITH";
