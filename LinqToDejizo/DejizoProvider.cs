@@ -1,14 +1,10 @@
-﻿using System;
+﻿using Marimo.ExpressionParser;
+using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
-using System.Reflection;
-using System.Text;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
-using System.Collections;
 using static Marimo.ExpressionParser.ParserCreaters;
-using static Marimo.LinqToDejizo.DejizoProvider;
-using Marimo.ExpressionParser;
 
 namespace Marimo.LinqToDejizo
 {
@@ -33,28 +29,26 @@ namespace Marimo.LinqToDejizo
 
         DejizoClient client;
 
+        async Task<(SearchDicItemResult itemsInfo, IEnumerable<GetDicItemResult> items)> GetItems(SearchDicItemCondition condition)
+        {
+            var titles = await client.SearchDicItemLite(condition);
+
+            IEnumerable<GetDicItemResult> GetResults()
+            {
+                foreach (var item in titles.TitleList)
+                {
+                    yield return client.GetDicItemLite(item.ItemID).GetAwaiter().GetResult();
+                }
+            }
+
+            return (titles, GetResults());
+        }
+
         public override object Execute(Expression expression)
         {
-            var condition = new SearchDicItemCondition();
-
-            ParseLinqRoot(expression, condition);
-
-            (var itemsInfo, var items) =
-                Task.Run(async () =>
-                {
-                    var titles = await client.SearchDicItemLite(condition);
-
-                    IEnumerable<GetDicItemResult> GetResults()
-                    {
-                        foreach (var item in titles.TitleList)
-                        {
-                            yield return client.GetDicItemLite(item.ItemID).GetAwaiter().GetResult();
-                        }
-                    }
-
-                    return (titles, GetResults());
-
-                }).GetAwaiter().GetResult();
+            var condition = ParseLinqRoot(expression);
+            
+            (var itemsInfo, var items) = Task.Run(async () => await GetItems(condition)).GetAwaiter().GetResult();
 
             var query =
                 from item in items
@@ -76,8 +70,10 @@ namespace Marimo.LinqToDejizo
             }
         }
 
-        private void ParseLinqRoot(Expression expression, SearchDicItemCondition condition)
+        private SearchDicItemCondition ParseLinqRoot(Expression expression)
         {
+            var condition = new SearchDicItemCondition();
+
             var selectLambda = Lambda();
 
             var word = Constant();
@@ -156,6 +152,8 @@ namespace Marimo.LinqToDejizo
             query.Action = _ => condition.ResultType = "SelectItems";
 
             wholeExtention.Parse(expression);
+
+            return condition;
         }
 
         public override string GetQueryText(Expression expression)

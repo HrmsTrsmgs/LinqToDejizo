@@ -13,8 +13,8 @@ namespace Marimo.ExpressionParser
         protected override IEnumerable<(Parser, Func<BinaryExpression, Expression>)> Children =>
             new(Parser, Func<BinaryExpression, Expression>)[]
             {
-                    (Right, x => x.Right),
-                    (Left, x => x.Left),
+                (Right, x => x.Right),
+                (Left, x => x.Left),
             };
     }
 }

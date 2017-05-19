@@ -41,7 +41,7 @@ namespace Marimo.LinqToDejizo
             Requested?.Invoke(this, new DejizoRequestEventArgs { Uri = new Uri(uri) });
             var response = await client.GetAsync(uri);
 
-            Responsed?.Invoke(this, new DejizoResponseEventArgs { Uri = new Uri(uri), ResponseJon = await response.Content.ReadAsStringAsync() });
+            Responsed?.Invoke(this, new DejizoResponseEventArgs { Uri = new Uri(uri), ResponseJson = await response.Content.ReadAsStringAsync() });
 
             var stream = await response.Content.ReadAsStreamAsync();
             
@@ -66,7 +66,7 @@ namespace Marimo.LinqToDejizo
             Requested?.Invoke(this, new DejizoRequestEventArgs { Uri = new Uri(uri) });
             var response = await client.GetAsync(uri);
             
-            Responsed?.Invoke(this, new DejizoResponseEventArgs { Uri = new Uri(uri), ResponseJon = await response.Content.ReadAsStringAsync() });
+            Responsed?.Invoke(this, new DejizoResponseEventArgs { Uri = new Uri(uri), ResponseJson = await response.Content.ReadAsStringAsync() });
             var stream = await response.Content.ReadAsStreamAsync();
 
             var serializer = new DataContractSerializer(typeof(GetDicItemResult));
