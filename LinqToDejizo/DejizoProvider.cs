@@ -35,7 +35,7 @@ namespace Marimo.LinqToDejizo
 
         public override object Execute(Expression expression)
         {
-            SearchDicItemCondition condition = new SearchDicItemCondition();
+            var condition = new SearchDicItemCondition();
 
             ParseLinqRoot(expression, condition);
 
@@ -118,9 +118,11 @@ namespace Marimo.LinqToDejizo
             var count =
                 _((IQueryable<object> c) => c.Count(),
                     arguments: new[] { query });
+
             var first =
                 _((IQueryable<object> c) => c.First(),
                     arguments: new[] { query });
+
             var single =
                 _((IQueryable<object> c) => c.Single(),
                     arguments: new[] { query });
@@ -155,19 +157,6 @@ namespace Marimo.LinqToDejizo
 
             wholeExtention.Parse(expression);
         }
-
-        
-
-
-
-
-
-
-
-
-
-
-
 
         public override string GetQueryText(Expression expression)
         {
