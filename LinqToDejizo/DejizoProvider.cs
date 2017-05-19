@@ -6,104 +6,12 @@ using System.Text;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections;
-using static Marimo.LinqToDejizo.ParserCreaters;
+using static Marimo.ExpressionParser.ParserCreaters;
 using static Marimo.LinqToDejizo.DejizoProvider;
+using Marimo.ExpressionParser;
 
 namespace Marimo.LinqToDejizo
 {
-    public static class ParserCreaters
-    {
-        public static MethodCallParser MethodCall(IEnumerable<ExpressionParser> arguments)
-           => new MethodCallParser
-           {
-               Arguments = arguments.ToArray()
-           };
-
-        public static MethodCallParser MethodCall(Func<MethodCallExpression, bool> condition, IEnumerable<ExpressionParser> arguments)
-        => new MethodCallParser(condition)
-        {
-            Arguments = arguments.ToArray()
-        };
-        public static MethodCallParser _<TReceiver>(Expression<Func<TReceiver, object>> callExpression, IEnumerable<ExpressionParser> arguments)
-            => MethodCall(m => m.Method.GetGenericMethodDefinition() == GetInfo(callExpression).GetGenericMethodDefinition(), arguments);
-
-        public static MethodCallParser _<TReceiver1, TReceiver2>(Expression<Func<TReceiver1, TReceiver2, object>> callExpression, IEnumerable<ExpressionParser> arguments)
-            => MethodCall(m => m.Method == GetInfo(callExpression), arguments);
-
-        public static UnaryParser Unary(ExpressionParser operand)
-            => new UnaryParser
-            {
-                Operand = operand
-            };
-
-        public static LambdaParser Lambda(ExpressionParser body = null)
-            => new LambdaParser
-            {
-                Body = body
-            };
-
-        public static BinaryParser Binary(ExpressionParser left, ExpressionParser right)
-            => new BinaryParser
-            {
-                Left = left,
-                Right = right
-            };
-
-        public static MemberParser Member(Func<MemberExpression, bool> condition)
-            => new MemberParser(condition);
-
-        public static ConstantParser Constant()
-            => new ConstantParser();
-
-        private static MethodInfo GetInfo<TReceiver>(Expression<Func<TReceiver, object>> callExpression)
-        {
-            switch (callExpression)
-            {
-                case LambdaExpression l:
-                    switch (l.Body)
-                    {
-                        case UnaryExpression u:
-                            switch (u.Operand)
-                            {
-                                case MethodCallExpression m:
-                                    return m.Method;
-                                default:
-                                    throw new Exception();
-                            }
-                        case MethodCallExpression m:
-                            return m.Method;
-                        default:
-                            throw new Exception();
-                    }
-                default:
-                    throw new Exception();
-            }
-        }
-
-        private static MethodInfo GetInfo<TReceiver, TIn>(Expression<Func<TReceiver, TIn, object>> callExpression)
-        {
-            switch (callExpression)
-            {
-                case LambdaExpression l:
-                    switch (l.Body)
-                    {
-                        case UnaryExpression u:
-                            switch (u.Operand)
-                            {
-                                case MethodCallExpression m:
-                                    return m.Method;
-                                default:
-                                    throw new Exception();
-                            }
-                        default:
-                            throw new Exception();
-                    }
-                default:
-                    throw new Exception();
-            }
-        }
-
-    }
     public class DejizoProvider : QueryProvider
     {
         public DejizoProvider()
@@ -150,7 +58,8 @@ namespace Marimo.LinqToDejizo
 
             var query =
                 from item in items
-                select GetSelectLambda(condition)(new DejizoItem(item));
+                select ((Func<DejizoItem, object>)condition.SelectLambda?.Compile() ?? (x => x))(
+                    new DejizoItem(item));
 
             switch (condition.ResultType)
             {
@@ -166,9 +75,6 @@ namespace Marimo.LinqToDejizo
                     return null;
             }
         }
-
-        private Func<DejizoItem, object> GetSelectLambda(SearchDicItemCondition condition) =>
-            (Func<DejizoItem, object>)condition.SelectLambda?.Compile() ?? (x => x);
 
         private void ParseLinqRoot(Expression expression, SearchDicItemCondition condition)
         {
@@ -201,7 +107,7 @@ namespace Marimo.LinqToDejizo
                     arguments: new[] { null, cast }) 
                 |
                 _((IQueryable<object> c) => c.Select(x => x),
-                    arguments: new ExpressionParser[]
+                    arguments: new Parser[]
                     {
                         MethodCall(
                             arguments:new[]{ null, cast }),
@@ -250,201 +156,19 @@ namespace Marimo.LinqToDejizo
             wholeExtention.Parse(expression);
         }
 
-        public abstract class ExpressionParser
-        {
-            public Action Action { get; set; }
-            public abstract bool Parse(Expression expression);
-
-            public static ExpressionParser operator |(ExpressionParser left, ExpressionParser right)
-            {
-                return new OrParser(left, right);
-            }
-        }
-
-        public abstract class ExpressionParser<T> : ExpressionParser where T : Expression
-        {
-            public ExpressionParser() { }
-
-            public ExpressionParser(Func<T, bool> condition)
-            {
-                this.condition = condition;
-            }
-
-            Func<T, bool> condition;
-
-            protected virtual IEnumerable<(ExpressionParser, Func<T, Expression>)> Children => new(ExpressionParser, Func<T, Expression>)[] { };
-            public new Action<T> Action { get; set; }
-
-            public override bool Parse(Expression expression)
-            {
-                switch (expression)
-                {
-                    case T t when condition?.Invoke(t) ?? true:
-                        foreach (var child in Children)
-                        {
-                            if (!child.Item1?.Parse(child.Item2(t)) ?? false)
-                            {
-                                return false;
-                            }
-                        }
-                        Action?.Invoke(t);
-                        return true;
-                    default:
-                        return false;
-                }
-            }
-
-            public static ExpressionParser<T> operator |(ExpressionParser<T> left, ExpressionParser<T> right)
-            {
-                return new OrParser<T>(left, right);
-            }
-        }
-
-        public class OrParser : ExpressionParser
-        {
-            public ExpressionParser Left { get; set; }
-            public ExpressionParser Right { get; set; }
-
-            public OrParser(ExpressionParser left, ExpressionParser right)
-            {
-                Left = left;
-                Right = right;
-            }
-            public override bool Parse(Expression expression)
-            {
-                if (Left.Parse(expression) || Right.Parse(expression))
-                {
-                    Action?.Invoke();
-                    return true;
-                }
-                return false;
-            }
-        }
+        
 
 
-        public class OrParser<T> : ExpressionParser<T> where T : Expression
-        {
-            public ExpressionParser<T> Left { get; set; }
-            public ExpressionParser<T> Right { get; set; }
-
-            public OrParser(ExpressionParser<T> left, ExpressionParser<T> right)
-            {
-                Left = left;
-                Right = right;
-            }
-            public override bool Parse(Expression expression)
-            {
-                if (Left.Parse(expression) || Right.Parse(expression))
-                {
-                    Action?.Invoke(null);
-                    return true;
-                }
-                return false;
-            }
-        }
-
-        public class UnaryParser : ExpressionParser<UnaryExpression>
-        {
-            public ExpressionParser Operand { get; set; }
-
-            protected override IEnumerable<(ExpressionParser, Func<UnaryExpression, Expression>)> Children =>
-                new(ExpressionParser, Func<UnaryExpression, Expression>)[]
-                {
-                    (Operand, x => x.Operand)
-                };
-        }
-
-        public class BinaryParser : ExpressionParser<BinaryExpression>
-        {
-            public ExpressionParser Right { get; set; }
-            public ExpressionParser Left { get; set; }
-
-            protected override IEnumerable<(ExpressionParser, Func<BinaryExpression, Expression>)> Children =>
-                new(ExpressionParser, Func<BinaryExpression, Expression>)[]
-                {
-                    (Right, x => x.Right),
-                    (Left, x => x.Left),
-                };
-        }
-
-        public class LambdaParser : ExpressionParser<LambdaExpression>
-        {
-            public ExpressionParser Body { get; set; }
-
-            protected override IEnumerable<(ExpressionParser, Func<LambdaExpression, Expression>)> Children =>
-                new(ExpressionParser, Func<LambdaExpression, Expression>)[]
-                {
-                    (Body, x => x.Body),
-                };
-        }
-
-        public class MethodCallParser : ExpressionParser<MethodCallExpression>
-        {
-            public ExpressionParser[] Arguments { get; set; } = new ExpressionParser[] { null, null };
-
-            protected override IEnumerable<(ExpressionParser, Func<MethodCallExpression, Expression>)> Children =>
-                Arguments.Select<ExpressionParser,(ExpressionParser, Func<MethodCallExpression, Expression>)>((x, i) => (x, xx => xx.Arguments[i]));
-            public MethodCallParser() { }
-            public MethodCallParser(Func<MethodCallExpression, bool> condition) : base(condition) { }
-        }
-
-        public class ConstantParser : ExpressionParser<ConstantExpression>
-        {
-        }
-        public class MemberParser : ExpressionParser<MemberExpression>
-        {
-            public MemberParser() { }
-            public MemberParser(Func<MemberExpression, bool> condition) : base(condition) { }
-        }
 
 
-        private MethodInfo GetInfo<TReceiver>(Expression<Func<TReceiver, object>> callExpression)
-        {
-            switch (callExpression)
-            {
-                case LambdaExpression l:
-                    switch (l.Body)
-                    {
-                        case UnaryExpression u:
-                            switch (u.Operand)
-                            {
-                                case MethodCallExpression m:
-                                    return m.Method;
-                                default:
-                                    throw new Exception();
-                            }
-                        case MethodCallExpression m:
-                            return m.Method;
-                        default:
-                            throw new Exception();
-                    }
-                default:
-                    throw new Exception();
-            }
-        }
 
-        private MethodInfo GetInfo<TReceiver, TIn>(Expression<Func<TReceiver, TIn, object>> callExpression)
-        {
-            switch (callExpression)
-            {
-                case LambdaExpression l:
-                    switch (l.Body)
-                    {
-                        case UnaryExpression u:
-                            switch (u.Operand)
-                            {
-                                case MethodCallExpression m:
-                                    return m.Method;
-                                default:
-                                    throw new Exception();
-                            }
-                        default:
-                            throw new Exception();
-                    }
-                default:
-                    throw new Exception();
-            }
-        }
+
+
+
+
+
+
+
         public override string GetQueryText(Expression expression)
         {
             return "query text";
