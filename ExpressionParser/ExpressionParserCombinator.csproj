@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp1.1</TargetFramework>
+    <AssemblyName>Marimo.ExpressionParserCombinator</AssemblyName>
+    <RootNamespace>Marimo.ExpressionParserCombinator</RootNamespace>
+    <Version>0.0.2</Version>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <AssemblyVersion>0.0.2.0</AssemblyVersion>
+    <FileVersion>0.0.2.0</FileVersion>
+    <PackageId>Marimo.ExpressionParserCombinator</PackageId>
+    <Authors>Marimo.ExpressionParserCombinator</Authors>
+    <Company>Marimo.ExpressionParserCombinator</Company>
+    <Product>Marimo.ExpressionParserCombinator</Product>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.ValueTuple" Version="4.3.1" />
+  </ItemGroup>
+
+</Project>

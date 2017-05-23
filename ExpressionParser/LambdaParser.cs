@@ -3,14 +3,14 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace Marimo.ExpressionParser
+namespace Marimo.ExpressionParserCombinator
 {
-    public class LambdaParser : Parser<LambdaExpression>
+    public class LambdaParser : ExpressionParser<LambdaExpression>
     {
-        public Parser Body { get; set; }
+        public ExpressionParser Body { get; set; }
 
-        protected override IEnumerable<(Parser, Func<LambdaExpression, Expression>)> Children =>
-            new(Parser, Func<LambdaExpression, Expression>)[]
+        protected override IEnumerable<(ExpressionParser, Func<LambdaExpression, Expression>)> Children =>
+            new(ExpressionParser, Func<LambdaExpression, Expression>)[]
             {
                     (Body, x => x.Body),
             };

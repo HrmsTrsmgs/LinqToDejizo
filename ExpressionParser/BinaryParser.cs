@@ -3,15 +3,15 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace Marimo.ExpressionParser
+namespace Marimo.ExpressionParserCombinator
 {
-    public class BinaryParser : Parser<BinaryExpression>
+    public class BinaryParser : ExpressionParser<BinaryExpression>
     {
-        public Parser Right { get; set; }
-        public Parser Left { get; set; }
+        public ExpressionParser Right { get; set; }
+        public ExpressionParser Left { get; set; }
 
-        protected override IEnumerable<(Parser, Func<BinaryExpression, Expression>)> Children =>
-            new(Parser, Func<BinaryExpression, Expression>)[]
+        protected override IEnumerable<(ExpressionParser, Func<BinaryExpression, Expression>)> Children =>
+            new(ExpressionParser, Func<BinaryExpression, Expression>)[]
             {
                 (Right, x => x.Right),
                 (Left, x => x.Left),

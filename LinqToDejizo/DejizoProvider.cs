@@ -1,10 +1,10 @@
-﻿using Marimo.ExpressionParser;
+﻿using Marimo.ExpressionParserCombinator;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using static Marimo.ExpressionParser.ParserCreaters;
+using static Marimo.ExpressionParserCombinator.ParserCreaters;
 
 namespace Marimo.LinqToDejizo
 {
@@ -76,7 +76,10 @@ namespace Marimo.LinqToDejizo
 
             var selectLambda = Lambda();
 
-            var word = Constant();
+            var constWord = Constant();
+            var valiableWord = Member();
+
+            var word = constWord | valiableWord;
 
             var header = Member(x => x.Member.Name == "HeaderText");
 
@@ -103,7 +106,7 @@ namespace Marimo.LinqToDejizo
                     arguments: new[] { null, cast }) 
                 |
                 _((IQueryable<object> c) => c.Select(x => x),
-                    arguments: new Parser[]
+                    arguments: new ExpressionParser[]
                     {
                         MethodCall(
                             arguments:new[]{ null, cast }),
@@ -128,7 +131,8 @@ namespace Marimo.LinqToDejizo
             var wholeExtention = lastMethod | query;
 
             selectLambda.Action = l => condition.SelectLambda = l;
-            word.Action = x => condition.Word = (string)x.Value;
+            constWord.Action = x => condition.Word = (string)x.Value;
+            valiableWord.Action = x => condition.Word = (string)x.Member.Name;
             header.Action = x => condition.Scope = "HEADWORD";
             equals.Action = _ => condition.Match = "EXACT";
             endsWith.Action = m =>

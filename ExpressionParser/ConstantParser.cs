@@ -3,9 +3,13 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace Marimo.ExpressionParser
+namespace Marimo.ExpressionParserCombinator
 {
-    public class ConstantParser : Parser<ConstantExpression>
+    public class ConstantParser : ExpressionParser<ConstantExpression>
     {
+        public override bool Parse(Expression expression)
+        {
+            return base.Parse(expression);
+        }
     }
 }

@@ -87,6 +87,19 @@ namespace Marimo.LinqToDejizo.Test
         }
 
         [Fact]
+        public void 完全一致検索は変数で指定することもできます()
+        {
+            var tested = new DejizoSource();
+            var word = "dictionary";
+            var query =
+                from item in tested.EJdict
+                where item.HeaderText == word
+                select item;
+
+            query.Count().Is(1);
+        }
+
+        [Fact]
         public void 英和辞書で完全一致検索は左辺等辺がどちらでもできます()
         {
             var tested = new DejizoSource();

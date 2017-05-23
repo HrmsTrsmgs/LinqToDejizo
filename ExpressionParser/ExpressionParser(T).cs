@@ -3,20 +3,20 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace Marimo.ExpressionParser
+namespace Marimo.ExpressionParserCombinator
 {
-    public abstract class Parser<T> : Parser where T : Expression
+    public abstract class ExpressionParser<T> : ExpressionParser where T : Expression
     {
-        public Parser() { }
+        public ExpressionParser() { }
 
-        public Parser(Func<T, bool> condition)
+        public ExpressionParser(Func<T, bool> condition)
         {
             this.condition = condition;
         }
 
         Func<T, bool> condition;
 
-        protected virtual IEnumerable<(Parser, Func<T, Expression>)> Children => new(Parser, Func<T, Expression>)[] { };
+        protected virtual IEnumerable<(ExpressionParser, Func<T, Expression>)> Children => new(ExpressionParser, Func<T, Expression>)[] { };
         public new Action<T> Action { get; set; }
 
         public override bool Parse(Expression expression)
@@ -38,7 +38,7 @@ namespace Marimo.ExpressionParser
             }
         }
 
-        public static Parser<T> operator |(Parser<T> left, Parser<T> right)
+        public static ExpressionParser<T> operator |(ExpressionParser<T> left, ExpressionParser<T> right)
         {
             return new OrParser<T>(left, right);
         }

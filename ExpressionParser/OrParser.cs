@@ -3,14 +3,14 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace Marimo.ExpressionParser
+namespace Marimo.ExpressionParserCombinator
 {
-    public class OrParser : Parser
+    public class OrParser : ExpressionParser
     {
-        public Parser Left { get; set; }
-        public Parser Right { get; set; }
+        public ExpressionParser Left { get; set; }
+        public ExpressionParser Right { get; set; }
 
-        public OrParser(Parser left, Parser right)
+        public OrParser(ExpressionParser left, ExpressionParser right)
         {
             Left = left;
             Right = right;

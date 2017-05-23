@@ -5,45 +5,48 @@ using System.Text;
 using System.Linq;
 using System.Reflection;
 
-namespace Marimo.ExpressionParser
+namespace Marimo.ExpressionParserCombinator
 {
     public static class ParserCreaters
     {
-        public static MethodCallParser MethodCall(IEnumerable<Parser> arguments)
+        public static MethodCallParser MethodCall(IEnumerable<ExpressionParser> arguments)
            => new MethodCallParser
            {
                Arguments = arguments.ToArray()
            };
 
-        public static MethodCallParser MethodCall(Func<MethodCallExpression, bool> condition, IEnumerable<Parser> arguments)
+        public static MethodCallParser MethodCall(Func<MethodCallExpression, bool> condition, IEnumerable<ExpressionParser> arguments)
         => new MethodCallParser(condition)
         {
             Arguments = arguments.ToArray()
         };
-        public static MethodCallParser _<TReceiver>(Expression<Func<TReceiver, object>> callExpression, IEnumerable<Parser> arguments)
+        public static MethodCallParser _<TReceiver>(Expression<Func<TReceiver, object>> callExpression, IEnumerable<ExpressionParser> arguments)
             => MethodCall(m => m.Method.GetGenericMethodDefinition() == GetInfo(callExpression).GetGenericMethodDefinition(), arguments);
 
-        public static MethodCallParser _<TReceiver1, TReceiver2>(Expression<Func<TReceiver1, TReceiver2, object>> callExpression, IEnumerable<Parser> arguments)
+        public static MethodCallParser _<TReceiver1, TReceiver2>(Expression<Func<TReceiver1, TReceiver2, object>> callExpression, IEnumerable<ExpressionParser> arguments)
             => MethodCall(m => m.Method == GetInfo(callExpression), arguments);
 
-        public static UnaryParser Unary(Parser operand)
+        public static UnaryParser Unary(ExpressionParser operand)
             => new UnaryParser
             {
                 Operand = operand
             };
 
-        public static LambdaParser Lambda(Parser body = null)
+        public static LambdaParser Lambda(ExpressionParser body = null)
             => new LambdaParser
             {
                 Body = body
             };
 
-        public static BinaryParser Binary(Parser left, Parser right)
+        public static BinaryParser Binary(ExpressionParser left, ExpressionParser right)
             => new BinaryParser
             {
                 Left = left,
                 Right = right
             };
+
+        public static MemberParser Member()
+    => new MemberParser();
 
         public static MemberParser Member(Func<MemberExpression, bool> condition)
             => new MemberParser(condition);

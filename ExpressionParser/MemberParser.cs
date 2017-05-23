@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace Marimo.ExpressionParser
+namespace Marimo.ExpressionParserCombinator
 {
-    public class MemberParser : Parser<MemberExpression>
+    public class MemberParser : ExpressionParser<MemberExpression>
     {
         public MemberParser() { }
         public MemberParser(Func<MemberExpression, bool> condition) : base(condition) { }

@@ -4,14 +4,14 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Linq;
 
-namespace Marimo.ExpressionParser
+namespace Marimo.ExpressionParserCombinator
 {
-    public class MethodCallParser : Parser<MethodCallExpression>
+    public class MethodCallParser : ExpressionParser<MethodCallExpression>
     {
-        public Parser[] Arguments { get; set; } = new Parser[] { null, null };
+        public ExpressionParser[] Arguments { get; set; } = new ExpressionParser[] { null, null };
 
-        protected override IEnumerable<(Parser, Func<MethodCallExpression, Expression>)> Children =>
-            Arguments.Select<Parser, (Parser, Func<MethodCallExpression, Expression>)>((x, i) => (x, xx => xx.Arguments[i]));
+        protected override IEnumerable<(ExpressionParser, Func<MethodCallExpression, Expression>)> Children =>
+            Arguments.Select<ExpressionParser, (ExpressionParser, Func<MethodCallExpression, Expression>)>((x, i) => (x, xx => xx.Arguments[i]));
         public MethodCallParser() { }
         public MethodCallParser(Func<MethodCallExpression, bool> condition) : base(condition) { }
     }
