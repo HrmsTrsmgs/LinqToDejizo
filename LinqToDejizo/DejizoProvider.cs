@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading.Tasks;
 using static Marimo.ExpressionParserCombinator.ParserCreaters;
 
@@ -63,11 +64,37 @@ namespace Marimo.LinqToDejizo
                     return query.First();
                 case "Single":
                     return query.Single();
+                case "FirstOrDefault":
+                    return query.FirstOrDefault();
                 case "SelectItems":
                     return query;
                 default:
                     return null;
             }
+        }
+
+        private T GetValue<T>(MemberExpression memberExpression, PropertyInfo propertyInfo)
+        {
+            return (T)propertyInfo.GetValue(GetValue<object>(memberExpression), null);
+        }
+        private T GetValue<T>(MemberExpression memberExpression)
+        {
+            var childExpression = memberExpression.Expression;
+            if (childExpression.NodeType == ExpressionType.MemberAccess)
+            {
+                return (T)GetValue<object>(childExpression as MemberExpression, memberExpression.Member as PropertyInfo);
+            }
+            else
+            {
+                var constant = childExpression as ConstantExpression;
+                var fieldInfo = memberExpression.Member as FieldInfo;
+                return (T)fieldInfo.GetValue(constant.Value);
+            }
+        }
+
+        private static T GetValue<T>(ConstantExpression constantExpression)
+        {
+            return (T)constantExpression.Value;
         }
 
         private SearchDicItemCondition ParseLinqRoot(Expression expression)
@@ -77,6 +104,7 @@ namespace Marimo.LinqToDejizo
             var selectLambda = Lambda();
 
             var constWord = Constant();
+
             var valiableWord = Member();
 
             var word = constWord | valiableWord;
@@ -97,19 +125,19 @@ namespace Marimo.LinqToDejizo
                 _((string s, string p) => s.Contains(p),
                     arguments: new[] { word });
 
-            var cast = 
+            var whereFunc = 
                 Unary(
                     operand: Lambda(equals | endsWith | startsWith | contains));
 
             var query =
                 _((IQueryable<object> c) => c.Where(x => true),
-                    arguments: new[] { null, cast }) 
+                    arguments: new[] { null, whereFunc }) 
                 |
                 _((IQueryable<object> c) => c.Select(x => x),
                     arguments: new ExpressionParser[]
                     {
                         MethodCall(
-                            arguments:new[]{ null, cast }),
+                            arguments:new[]{ null, whereFunc }),
                         Unary(
                             operand: selectLambda)
                     });
@@ -122,17 +150,22 @@ namespace Marimo.LinqToDejizo
                 _((IQueryable<object> c) => c.First(),
                     arguments: new[] { query });
 
+            var firstOrDefault =
+                _((IQueryable<object> c) => c.FirstOrDefault(),
+                    arguments: new[] { query });
+
             var single =
                 _((IQueryable<object> c) => c.Single(),
                     arguments: new[] { query });
 
-            var lastMethod = count | first | single;
+            var lastMethod = count | first | single | firstOrDefault;
 
             var wholeExtention = lastMethod | query;
 
             selectLambda.Action = l => condition.SelectLambda = l;
-            constWord.Action = x => condition.Word = (string)x.Value;
-            valiableWord.Action = x => condition.Word = (string)x.Member.Name;
+            constWord.Action = x => condition.Word = GetValue<string>(x);
+            valiableWord.Action = x => condition.Word = GetValue<string>(x);
+            
             header.Action = x => condition.Scope = "HEADWORD";
             equals.Action = _ => condition.Match = "EXACT";
             endsWith.Action = m =>
@@ -150,9 +183,7 @@ namespace Marimo.LinqToDejizo
                 condition.Match = "CONTAIN";
                 condition.Scope = "HEADWORD";
             };
-            count.Action = m => condition.ResultType = m.Method.Name;
-            first.Action = m => condition.ResultType = m.Method.Name;
-            single.Action = m => condition.ResultType = m.Method.Name;
+            lastMethod.Action = m => condition.ResultType = m.Method.Name;
             query.Action = _ => condition.ResultType = "SelectItems";
 
             wholeExtention.Parse(expression);
@@ -162,7 +193,7 @@ namespace Marimo.LinqToDejizo
 
         public override string GetQueryText(Expression expression)
         {
-            return "query text";
+            return expression?.ToString() ?? "null";
         }
     }
 }

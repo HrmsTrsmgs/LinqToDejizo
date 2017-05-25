@@ -9,13 +9,10 @@ namespace Marimo.LinqToDejizo
 {
     public abstract class QueryProvider : IQueryProvider
     {
-
         protected QueryProvider()
         {
 
         }
-
-
 
         IQueryable<S> IQueryProvider.CreateQuery<S>(Expression expression)
         {
@@ -23,8 +20,6 @@ namespace Marimo.LinqToDejizo
             return new Query<S>(this, expression);
 
         }
-
-
 
         IQueryable IQueryProvider.CreateQuery(Expression expression)
         {
@@ -47,8 +42,6 @@ namespace Marimo.LinqToDejizo
 
         }
 
-
-
         S IQueryProvider.Execute<S>(Expression expression)
         {
 
@@ -56,16 +49,12 @@ namespace Marimo.LinqToDejizo
 
         }
 
-
-
         object IQueryProvider.Execute(Expression expression)
         {
 
             return Execute(expression);
 
         }
-
-
 
         public abstract string GetQueryText(Expression expression);
 

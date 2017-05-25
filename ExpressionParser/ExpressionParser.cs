@@ -10,9 +10,7 @@ namespace Marimo.ExpressionParserCombinator
         public Action Action { get; set; }
         public abstract bool Parse(Expression expression);
 
-        public static ExpressionParser operator |(ExpressionParser left, ExpressionParser right)
-        {
-            return new OrParser(left, right);
-        }
+        public static ExpressionParser operator |(ExpressionParser left, ExpressionParser right) =>
+            new OrParser(left, right);
     }
 }

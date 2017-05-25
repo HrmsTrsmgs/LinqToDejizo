@@ -19,7 +19,7 @@ namespace Marimo.ExpressionParserCombinator
         {
             if (Left.Parse(expression) || Right.Parse(expression))
             {
-                Action?.Invoke(null);
+                Action?.Invoke((T)expression);
                 return true;
             }
             return false;

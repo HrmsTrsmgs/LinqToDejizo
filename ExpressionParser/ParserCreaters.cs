@@ -46,10 +46,16 @@ namespace Marimo.ExpressionParserCombinator
             };
 
         public static MemberParser Member()
-    => new MemberParser();
+            => new MemberParser();
 
         public static MemberParser Member(Func<MemberExpression, bool> condition)
             => new MemberParser(condition);
+
+        public static MemberParser Member(ExpressionParser expression)
+            => new MemberParser
+            {
+                Expression = expression
+            };
 
         public static ConstantParser Constant()
             => new ConstantParser();

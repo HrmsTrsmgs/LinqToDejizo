@@ -99,14 +99,41 @@ namespace Marimo.LinqToDejizo.Test
             query.Count().Is(1);
         }
 
+        
         [Fact]
-        public void 英和辞書で完全一致検索は左辺等辺がどちらでもできます()
+        public void 完全一致検索はプロパティで指定することもできます()
+        {
+            var tested = new DejizoSource();
+            var obj = new { word = "dictionary" };
+            var query =
+                from item in tested.EJdict
+                where item.HeaderText == obj.word
+                select item;
+
+            query.Count().Is(1);
+        }
+
+        [Fact]
+        public void 英和辞書で完全一致検索は左辺と右辺がどちらでもできます()
         {
             var tested = new DejizoSource();
 
             var query =
                 from item in tested.EJdict
                 where "dictionary" == item.HeaderText
+                select item;
+
+            query.Count().Is(1);
+        }
+
+        [Fact]
+        public void 変数を指定した完全一致検索は左辺と右辺がどちらでもできます()
+        {
+            var tested = new DejizoSource();
+            var word = "dictionary";
+            var query =
+                from item in tested.EJdict
+                where word == item.HeaderText
                 select item;
 
             query.Count().Is(1);
@@ -153,6 +180,32 @@ namespace Marimo.LinqToDejizo.Test
                 select item;
 
             Assert.Throws<InvalidOperationException>(() =>query.First());
+        }
+
+        [Fact]
+        public void 英和辞書で取得したものに対してFirstOrDefaultが使えます()
+        {
+            var tested = new DejizoSource();
+
+            var query =
+                from item in tested.EJdict
+                where item.HeaderText.StartsWith("dict")
+                select item;
+
+            query.FirstOrDefault().BodyText.Is("ｄｉｃｔａｔｉｏｎ	ｄｉｃｔａｔｏｒ	ｄｉｃｔｉｏｎａｒｙ");
+        }
+
+        [Fact]
+        public void FirstOrDefaultは項目がなかった場合にNullを返しますz()
+        {
+            var tested = new DejizoSource();
+
+            var query =
+                from item in tested.EJdict
+                where item.HeaderText.StartsWith("xxx")
+                select item;
+
+            query.FirstOrDefault().IsNull();
         }
 
         [Fact]
