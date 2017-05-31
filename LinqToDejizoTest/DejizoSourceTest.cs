@@ -8,11 +8,11 @@ namespace Marimo.LinqToDejizo.Test
 {
     public class DejizoSourceTest
     {
+        DejizoSource tested = new DejizoSource();
+
         [Fact]
         public void 英和辞書でCountが取得できます()
         {
-            var tested = new DejizoSource();
-
             var query =
                 from item in tested.EJdict
                 where item.HeaderText.StartsWith("dict")
@@ -24,8 +24,6 @@ namespace Marimo.LinqToDejizo.Test
         [Fact]
         public void 英和辞書で検索する単語に合わせたCountが取得できます()
         {
-            var tested = new DejizoSource();
-
             var query =
                 from item in tested.EJdict
                 where item.HeaderText.StartsWith("take")
@@ -37,8 +35,6 @@ namespace Marimo.LinqToDejizo.Test
         [Fact]
         public void 英和辞書で前方一致検索ができます()
         {
-            var tested = new DejizoSource();
-
             var query =
                 from item in tested.EJdict
                 where item.HeaderText.StartsWith("dict")
@@ -50,8 +46,6 @@ namespace Marimo.LinqToDejizo.Test
         [Fact]
         public void 英和辞書で後方一致検索ができます()
         {
-            var tested = new DejizoSource();
-
             var query =
                 from item in tested.EJdict
                 where item.HeaderText.EndsWith("dict")
@@ -63,8 +57,6 @@ namespace Marimo.LinqToDejizo.Test
         [Fact]
         public void 英和辞書であいまい検索ができます()
         {
-            var tested = new DejizoSource();
-
             var query =
                 from item in tested.EJdict
                 where item.HeaderText.Contains("dict")
@@ -76,8 +68,6 @@ namespace Marimo.LinqToDejizo.Test
         [Fact]
         public void 英和辞書で完全一致検索ができます()
         {
-            var tested = new DejizoSource();
-
             var query =
                 from item in tested.EJdict
                 where item.HeaderText == "dictionary"
@@ -89,7 +79,6 @@ namespace Marimo.LinqToDejizo.Test
         [Fact]
         public void 完全一致検索は変数で指定することもできます()
         {
-            var tested = new DejizoSource();
             var word = "dictionary";
             var query =
                 from item in tested.EJdict
@@ -103,7 +92,6 @@ namespace Marimo.LinqToDejizo.Test
         [Fact]
         public void 完全一致検索はプロパティで指定することもできます()
         {
-            var tested = new DejizoSource();
             var obj = new { word = "dictionary" };
             var query =
                 from item in tested.EJdict
@@ -116,8 +104,6 @@ namespace Marimo.LinqToDejizo.Test
         [Fact]
         public void 英和辞書で完全一致検索は左辺と右辺がどちらでもできます()
         {
-            var tested = new DejizoSource();
-
             var query =
                 from item in tested.EJdict
                 where "dictionary" == item.HeaderText
@@ -129,7 +115,6 @@ namespace Marimo.LinqToDejizo.Test
         [Fact]
         public void 変数を指定した完全一致検索は左辺と右辺がどちらでもできます()
         {
-            var tested = new DejizoSource();
             var word = "dictionary";
             var query =
                 from item in tested.EJdict
@@ -142,8 +127,6 @@ namespace Marimo.LinqToDejizo.Test
         [Fact]
         public void 英和辞書で取得したものに対してイテレーションが利きます()
         {
-            var tested = new DejizoSource();
-
             var query =
                 from item in tested.EJdict
                 where item.HeaderText.StartsWith("dict")
@@ -159,8 +142,6 @@ namespace Marimo.LinqToDejizo.Test
         [Fact]
         public void 英和辞書で取得したものに対してFirstが使えます()
         {
-            var tested = new DejizoSource();
-
             var query =
                 from item in tested.EJdict
                 where item.HeaderText.StartsWith("dict")
@@ -172,8 +153,6 @@ namespace Marimo.LinqToDejizo.Test
         [Fact]
         public void Firstは項目がなかった場合にエラーとなります()
         {
-            var tested = new DejizoSource();
-
             var query =
                 from item in tested.EJdict
                 where item.HeaderText.StartsWith("xxx")
@@ -185,8 +164,6 @@ namespace Marimo.LinqToDejizo.Test
         [Fact]
         public void 英和辞書で取得したものに対してFirstOrDefaultが使えます()
         {
-            var tested = new DejizoSource();
-
             var query =
                 from item in tested.EJdict
                 where item.HeaderText.StartsWith("dict")
@@ -198,8 +175,6 @@ namespace Marimo.LinqToDejizo.Test
         [Fact]
         public void FirstOrDefaultは項目がなかった場合にNullを返しますz()
         {
-            var tested = new DejizoSource();
-
             var query =
                 from item in tested.EJdict
                 where item.HeaderText.StartsWith("xxx")
@@ -211,8 +186,6 @@ namespace Marimo.LinqToDejizo.Test
         [Fact]
         public void 英和辞書で取得したものに対してSingleが使えます()
         {
-            var tested = new DejizoSource();
-
             var query =
                 from item in tested.EJdict
                 where item.HeaderText == "dictionary"
@@ -224,8 +197,6 @@ namespace Marimo.LinqToDejizo.Test
         [Fact]
         public void Singleは項目がなかった場合にエラーとなります()
         {
-            var tested = new DejizoSource();
-
             var query =
                 from item in tested.EJdict
                 where item.HeaderText.StartsWith("xxx")
@@ -235,10 +206,76 @@ namespace Marimo.LinqToDejizo.Test
         }
 
         [Fact]
+        public void Singleは項目が二つ以上だった場合にエラーとなります()
+        {
+            var query =
+                from item in tested.EJdict
+                where item.HeaderText.StartsWith("dict")
+                select item;
+
+            Assert.Throws<InvalidOperationException>(() => query.Single());
+        }
+
+        [Fact]
+        public void 英和辞書で取得したものに対してSingleOrDefaultが使えます()
+        {
+            var query =
+                from item in tested.EJdict
+                where item.HeaderText == "dictionary"
+                select item;
+
+            query.SingleOrDefault().BodyText.Is("『辞書』，辞典，字引き");
+        }
+
+        [Fact]
+        public void SingleOrDefaultは項目がなかった場合にNullを返します()
+        {
+            var query =
+                from item in tested.EJdict
+                where item.HeaderText.StartsWith("xxx")
+                select item;
+
+            query.SingleOrDefault().IsNull();
+        }
+
+        [Fact]
+        public void SingleOrDefaultは項目が二つ以上だった場合にNullを返します()
+        {
+            var query =
+                from item in tested.EJdict
+                where item.HeaderText.StartsWith("dict")
+                select item;
+
+            Assert.Throws<InvalidOperationException>(() => query.Single());
+        }
+
+        [Fact]
+        public void 英和辞書で取得したものに対してToArrayが使えます()
+        {
+            var query =
+                from item in tested.EJdict
+                where item.HeaderText.StartsWith("dict")
+                select item;
+
+            query.ToArray().IsInstanceOf<DejizoItem[]>();
+            query.ToArray().Count().Is(11);
+        }
+
+        [Fact]
+        public void 英和辞書で取得したものに対してToListが使えます()
+        {
+            var query =
+                from item in tested.EJdict
+                where item.HeaderText.StartsWith("dict")
+                select item;
+
+            query.ToList().IsInstanceOf<List<DejizoItem>>();
+            query.ToList().Count().Is(11);
+        }
+
+        [Fact]
         public void Singleは項目が二つ以上あった場合にエラーとなります()
         {
-            var tested = new DejizoSource();
-
             var query =
                 from item in tested.EJdict
                 where item.HeaderText.StartsWith("dict")
@@ -250,8 +287,6 @@ namespace Marimo.LinqToDejizo.Test
         [Fact]
         public void SelectでBodyTextの選択ができます()
         {
-            var tested = new DejizoSource();
-
             var query =
                 from item in tested.EJdict
                 where item.HeaderText.StartsWith("dict")
@@ -263,8 +298,6 @@ namespace Marimo.LinqToDejizo.Test
         [Fact]
         public void SelectでHeaderTextの選択ができます()
         {
-            var tested = new DejizoSource();
-
             var query =
                 from item in tested.EJdict
                 where item.HeaderText.StartsWith("dict")
@@ -276,8 +309,6 @@ namespace Marimo.LinqToDejizo.Test
         [Fact]
         public void Selectでオブジェクトの組み立てができます()
         {
-            var tested = new DejizoSource();
-
             var query =
                 from item in tested.EJdict
                 where item.HeaderText.StartsWith("dict")

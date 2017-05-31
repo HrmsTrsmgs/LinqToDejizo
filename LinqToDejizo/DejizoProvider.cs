@@ -66,6 +66,8 @@ namespace Marimo.LinqToDejizo
                     return query.Single();
                 case "FirstOrDefault":
                     return query.FirstOrDefault();
+                case "SingleOrDefault":
+                    return query.SingleOrDefault();
                 case "SelectItems":
                     return query;
                 default:
@@ -80,15 +82,15 @@ namespace Marimo.LinqToDejizo
         private T GetValue<T>(MemberExpression memberExpression)
         {
             var childExpression = memberExpression.Expression;
-            if (childExpression.NodeType == ExpressionType.MemberAccess)
+            switch(childExpression)
             {
-                return (T)GetValue<object>(childExpression as MemberExpression, memberExpression.Member as PropertyInfo);
-            }
-            else
-            {
-                var constant = childExpression as ConstantExpression;
-                var fieldInfo = memberExpression.Member as FieldInfo;
-                return (T)fieldInfo.GetValue(constant.Value);
+                case MemberExpression m:
+                    return (T)GetValue<object>(m, memberExpression.Member as PropertyInfo);
+                case ConstantExpression c:
+                    var fieldInfo = memberExpression.Member as FieldInfo;
+                    return (T)fieldInfo.GetValue(c.Value);
+                default:
+                    throw new Exception();
             }
         }
 
@@ -158,7 +160,11 @@ namespace Marimo.LinqToDejizo
                 _((IQueryable<object> c) => c.Single(),
                     arguments: new[] { query });
 
-            var lastMethod = count | first | single | firstOrDefault;
+            var singleOrDefault =
+                _((IQueryable<object> c) => c.SingleOrDefault(),
+                    arguments: new[] { query });
+
+            var lastMethod = count | first | single | firstOrDefault | singleOrDefault;
 
             var wholeExtention = lastMethod | query;
 

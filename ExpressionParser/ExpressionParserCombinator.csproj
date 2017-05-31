@@ -4,10 +4,10 @@
     <TargetFramework>netcoreapp1.1</TargetFramework>
     <AssemblyName>Marimo.ExpressionParserCombinator</AssemblyName>
     <RootNamespace>Marimo.ExpressionParserCombinator</RootNamespace>
-    <Version>0.0.3</Version>
+    <Version>0.0.4</Version>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <AssemblyVersion>0.0.3.0</AssemblyVersion>
-    <FileVersion>0.0.3.0</FileVersion>
+    <AssemblyVersion>0.0.4.0</AssemblyVersion>
+    <FileVersion>0.0.4.0</FileVersion>
     <PackageId>Marimo.ExpressionParserCombinator</PackageId>
     <Authors>Marimo.ExpressionParserCombinator</Authors>
     <Company>Marimo.ExpressionParserCombinator</Company>
