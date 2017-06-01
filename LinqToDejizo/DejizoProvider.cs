@@ -30,36 +30,50 @@ namespace Marimo.LinqToDejizo
 
         DejizoClient client;
 
-        async Task<(SearchDicItemResult itemsInfo, IEnumerable<GetDicItemResult> items)> GetItems(SearchDicItemCondition condition)
+        async Task<(int totalHitCount, Func<Task<IEnumerable<GetDicItemResult>>> items)> GetItems(SearchDicItemCondition condition)
         {
             var titles = await client.SearchDicItemLite(condition);
 
-            IEnumerable<GetDicItemResult> GetResults()
-            {
-                foreach (var item in titles.TitleList)
-                {
-                    yield return client.GetDicItemLite(item.ItemID).GetAwaiter().GetResult();
-                }
-            }
+            var totalHitCount = titles.TotalHitCount;
 
-            return (titles, GetResults());
+            async Task<IEnumerable<GetDicItemResult>> GetResults()
+            {
+                var items = new List<GetDicItemResult>();
+
+                foreach (var title in titles.TitleList)
+                {
+                    items.Add(await client.GetDicItemLite(title.ItemID));
+                }
+                foreach (var pageIndex in Enumerable.Range(1, totalHitCount / DejizoClient.PageSize))
+                {
+                    titles = await client.SearchDicItemLite(condition, pageIndex);
+
+                    foreach (var title in titles.TitleList)
+                    {
+                        items.Add(await client.GetDicItemLite(title.ItemID));
+                    }
+                }
+                return items;
+            };
+
+            return (totalHitCount, ()=>GetResults());
         }
 
         public override object Execute(Expression expression)
         {
             var condition = ParseLinqRoot(expression);
             
-            (var itemsInfo, var items) = Task.Run(async () => await GetItems(condition)).GetAwaiter().GetResult();
+            (var totalHitCount, var items) = Task.Run(async () => await GetItems(condition)).GetAwaiter().GetResult();
 
             var query =
-                from item in items
+                from item in items().GetAwaiter().GetResult()
                 select ((Func<DejizoItem, object>)condition.SelectLambda?.Compile() ?? (x => x))(
                     new DejizoItem(item));
 
             switch (condition.ResultType)
             {
                 case "Count":
-                    return itemsInfo.TotalHitCount;
+                    return totalHitCount;
                 case "First":
                     return query.First();
                 case "Single":
@@ -199,7 +213,14 @@ namespace Marimo.LinqToDejizo
 
         public override string GetQueryText(Expression expression)
         {
-            return expression?.ToString() ?? "null";
+            try
+            {
+                return expression?.ToString() ?? "null";
+            }
+            catch
+            {
+                return "query text";
+            }
         }
     }
 }

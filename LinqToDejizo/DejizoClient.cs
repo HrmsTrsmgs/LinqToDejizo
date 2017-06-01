@@ -11,6 +11,8 @@ namespace Marimo.LinqToDejizo
 {
     public class DejizoClient
     {
+        public const int PageSize = 20;
+
         public event EventHandler<DejizoRequestEventArgs> Requested;
         public event EventHandler<DejizoResponseEventArgs> Responsed;
         public TimeSpan Interval { get; set; } = new TimeSpan(0, 0, 0, 60);
@@ -19,7 +21,7 @@ namespace Marimo.LinqToDejizo
 
         static HttpClient client = new HttpClient();
 
-        public async Task<SearchDicItemResult> SearchDicItemLite(SearchDicItemCondition condition)
+        public async Task<SearchDicItemResult> SearchDicItemLite(SearchDicItemCondition condition, int pageIndex = 0)
         {
             await Wait();
             
@@ -34,8 +36,8 @@ namespace Marimo.LinqToDejizo
                         {"Match", condition.Match},
                         {"Merge", "AND"},
                         {"Prof", "XHTML"},
-                        {"PageSize", "100"},
-                        {"PageIndex", "0"}
+                        {"PageSize", PageSize.ToString()},
+                        {"PageIndex", pageIndex.ToString()}
                     });
 
             Requested?.Invoke(this, new DejizoRequestEventArgs { Uri = new Uri(uri) });
@@ -74,14 +76,21 @@ namespace Marimo.LinqToDejizo
             return serializer.ReadObject(stream) as GetDicItemResult;
         }
 
+        object lockObject = new object();
+
         private async Task Wait()
         {
-            var betweenLast = DateTime.Now - lastGettingTime;
+            TimeSpan betweenLast;
+            lock (lockObject)
+            {
+                betweenLast = DateTime.Now - lastGettingTime;
+                lastGettingTime = DateTime.Now;
+            }
             if (betweenLast < Interval)
             {
                 await Task.Delay(betweenLast.Milliseconds);
             }
-            lastGettingTime = DateTime.Now;
+            
         }
     }
 }

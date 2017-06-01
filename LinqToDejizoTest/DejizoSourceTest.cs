@@ -206,7 +206,7 @@ namespace Marimo.LinqToDejizo.Test
         }
 
         [Fact]
-        public void Singleは項目が二つ以上だった場合にエラーとなります()
+        public void Singleは項目が二つ以上あった場合にエラーとなります()
         {
             var query =
                 from item in tested.EJdict
@@ -215,7 +215,6 @@ namespace Marimo.LinqToDejizo.Test
 
             Assert.Throws<InvalidOperationException>(() => query.Single());
         }
-
         [Fact]
         public void 英和辞書で取得したものに対してSingleOrDefaultが使えます()
         {
@@ -274,17 +273,6 @@ namespace Marimo.LinqToDejizo.Test
         }
 
         [Fact]
-        public void Singleは項目が二つ以上あった場合にエラーとなります()
-        {
-            var query =
-                from item in tested.EJdict
-                where item.HeaderText.StartsWith("dict")
-                select item;
-
-            Assert.Throws<InvalidOperationException>(() => query.Single());
-        }
-
-        [Fact]
         public void SelectでBodyTextの選択ができます()
         {
             var query =
@@ -316,6 +304,17 @@ namespace Marimo.LinqToDejizo.Test
 
             query.First().HeaderText.Is("dict.");
             query.First().BodyText.Is("ｄｉｃｔａｔｉｏｎ	ｄｉｃｔａｔｏｒ	ｄｉｃｔｉｏｎａｒｙ");
+        }
+
+        [Fact]
+        public void 多数の要素がすべて取得できます()
+        {
+            var query =
+                from item in tested.EJdict
+                where item.HeaderText.Contains("dict")
+                select item;
+
+            query.ToArray().Count().Is(45);
         }
     }
 }

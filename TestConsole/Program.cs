@@ -21,13 +21,10 @@ namespace TestConsole
 
             var query =
                 from item in tested.EJdict
-                where item.HeaderText.StartsWith("dict")
+                where item.HeaderText.Contains("dict")
                 select item;
 
-            foreach(var result in query)
-            {
-
-            }
+            query.ToArray();
 
             Console.ReadLine();
         }
