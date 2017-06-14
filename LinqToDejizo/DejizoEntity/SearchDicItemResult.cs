@@ -6,21 +6,15 @@ using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
 
-namespace Marimo.LinqToDejizo
+namespace Marimo.LinqToDejizo.DejizoEntity
 {
     [DataContract(Namespace ="http://btonic.est.co.jp/NetDic/NetDicV09")]
     public class SearchDicItemResult
     {
-        public SearchDicItemResult()
-        {
-            TitleList = new List<DicItemTitle>();
-        }
-
         [DataMember(Order = 1)]
         public int TotalHitCount { get; set; }
 
         [DataMember(Order = 2)]
-        public List<DicItemTitle> TitleList { get; set; }
+        public List<DicItemTitle> TitleList { get; set; } = new List<DicItemTitle>();
     }
-    
 }

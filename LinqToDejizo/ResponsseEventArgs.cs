@@ -4,9 +4,9 @@ using System.Text;
 
 namespace Marimo.LinqToDejizo
 {
-    public class DejizoResponseEventArgs : EventArgs
+    public class ResponseEventArgs : EventArgs
     {
         public Uri Uri { get; internal set; }
-        public string ResponseJson { get; internal set; }
+        public string Response { get; internal set; }
     }
 }

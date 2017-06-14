@@ -19,11 +19,14 @@ namespace Marimo.ExpressionParserCombinator
         protected virtual IEnumerable<(ExpressionParser, Func<T, Expression>)> Children => new(ExpressionParser, Func<T, Expression>)[] { };
         public new Action<T> Action { get; set; }
 
+        public Action<T> ConditionChecked;
+
         public override bool Parse(Expression expression)
         {
             switch (expression)
             {
                 case T t when condition?.Invoke(t) ?? true:
+                    ConditionChecked?.Invoke(t);
                     foreach (var child in Children)
                     {
                         if (!child.Item1?.Parse(child.Item2(t)) ?? false)

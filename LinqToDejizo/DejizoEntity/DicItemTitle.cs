@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Text;
 
-namespace Marimo.LinqToDejizo
+namespace Marimo.LinqToDejizo.DejizoEntity
 {
     [DataContract(Namespace = "http://btonic.est.co.jp/NetDic/NetDicV09")]
     public class DicItemTitle

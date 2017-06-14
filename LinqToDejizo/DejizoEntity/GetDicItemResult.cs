@@ -4,7 +4,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Xml.Linq;
 
-namespace Marimo.LinqToDejizo
+namespace Marimo.LinqToDejizo.DejizoEntity
 {
     [DataContract(Namespace = "http://btonic.est.co.jp/NetDic/NetDicV09")]
     public class GetDicItemResult

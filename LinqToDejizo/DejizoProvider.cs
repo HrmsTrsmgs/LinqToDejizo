@@ -1,4 +1,5 @@
 ﻿using Marimo.ExpressionParserCombinator;
+using Marimo.LinqToDejizo.DejizoEntity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,45 +19,71 @@ namespace Marimo.LinqToDejizo
             {
                 Requested?.Invoke(this, e);
             };
-            client.Responsed += (sender, e) =>
+            client.ReturnedResponse += (sender, e) =>
             {
-                Responsed?.Invoke(this, e);
+                ReturnedResponse?.Invoke(this, e);
             };
         }
 
-        public event EventHandler<DejizoRequestEventArgs> Requested;
-        public event EventHandler<DejizoResponseEventArgs> Responsed;
+        public event EventHandler<RequestEventArgs> Requested;
+        public event EventHandler<ResponseEventArgs> ReturnedResponse;
 
 
         DejizoClient client;
 
-        async Task<(int totalHitCount, Func<Task<IEnumerable<GetDicItemResult>>> items)> GetItems(SearchDicItemCondition condition)
+        async Task<(int totalHitCount, Func<Task<IEnumerable<GetDicItemResult>>> items)> GetItems(SearchCondition condition)
         {
-            var titles = await client.SearchDicItemLite(condition);
+            int totalHitCount = 0;
+            ISet<string> itemIDs = new HashSet<string>();
 
-            var totalHitCount = titles.TotalHitCount;
+            foreach(var c in condition.Conditions)
+            {
+                var data =
+                    new SearchDicItemData
+                    {
+                        Word = c.Word,
+                        Match = c.Match,
+                        ResultType = condition.ResultType,
+                        Scope = condition.Scope,
+                        PageIndex = 0,
+                        PageSize = DejizoClient.PageSize
+                    };
 
-            async Task<IEnumerable<GetDicItemResult>> GetResults()
+                var titles = await client.SearchDicItemLite(data);
+                var ids = titles.TitleList.Select(x => x.ItemID);
+                totalHitCount = titles.TotalHitCount;
+
+                foreach (var pageIndex in Enumerable.Range(1, totalHitCount / DejizoClient.PageSize))
+                {
+                    data.PageIndex = pageIndex;
+                    titles = await client.SearchDicItemLite(data);
+                    ids = ids.Concat(titles.TitleList.Select(x => x.ItemID)).ToList();
+                }
+                if(!itemIDs.Any())
+                {
+                    itemIDs = new HashSet<string>(ids);
+                }
+                else
+                {
+                    itemIDs = new HashSet<string>(itemIDs.Intersect(ids));
+                    totalHitCount = itemIDs.Count;
+                }
+            }
+            
+            
+                
+            async Task<IEnumerable<GetDicItemResult>> GetResultsAsync()
             {
                 var items = new List<GetDicItemResult>();
 
-                foreach (var title in titles.TitleList)
+                foreach (var id in itemIDs)
                 {
-                    items.Add(await client.GetDicItemLite(title.ItemID));
-                }
-                foreach (var pageIndex in Enumerable.Range(1, totalHitCount / DejizoClient.PageSize))
-                {
-                    titles = await client.SearchDicItemLite(condition, pageIndex);
-
-                    foreach (var title in titles.TitleList)
-                    {
-                        items.Add(await client.GetDicItemLite(title.ItemID));
-                    }
+                    items.Add(await client.GetDicItemLite(id));
                 }
                 return items;
             };
 
-            return (totalHitCount, ()=>GetResults());
+            return (totalHitCount, ()=>GetResultsAsync());
         }
 
         public override object Execute(Expression expression)
@@ -113,9 +140,9 @@ namespace Marimo.LinqToDejizo
             return (T)constantExpression.Value;
         }
 
-        private SearchDicItemCondition ParseLinqRoot(Expression expression)
+        private SearchCondition ParseLinqRoot(Expression expression)
         {
-            var condition = new SearchDicItemCondition();
+            var condition = new SearchCondition();
 
             var selectLambda = Lambda();
 
@@ -141,13 +168,20 @@ namespace Marimo.LinqToDejizo
                 _((string s, string p) => s.Contains(p),
                     arguments: new[] { word });
 
+            var singleCondition = equals | endsWith | startsWith | contains;
+
+            var andCondition =
+                Binary(
+                    left: singleCondition,
+                    right: singleCondition);
+
             var whereFunc = 
                 Unary(
-                    operand: Lambda(equals | endsWith | startsWith | contains));
+                    operand: Lambda(singleCondition | andCondition));
 
             var query =
                 _((IQueryable<object> c) => c.Where(x => true),
-                    arguments: new[] { null, whereFunc }) 
+                    arguments: new[] { null, whereFunc })
                 |
                 _((IQueryable<object> c) => c.Select(x => x),
                     arguments: new ExpressionParser[]
@@ -183,26 +217,30 @@ namespace Marimo.LinqToDejizo
             var wholeExtention = lastMethod | query;
 
             selectLambda.Action = l => condition.SelectLambda = l;
-            constWord.Action = x => condition.Word = GetValue<string>(x);
-            valiableWord.Action = x => condition.Word = GetValue<string>(x);
-            
+
+            (string Word, string Match) tempCondition = (null, null);
+            constWord.Action = x => tempCondition.Word =GetValue<string>(x);
+            valiableWord.Action = x => tempCondition.Word = GetValue<string>(x);
+
+
             header.Action = x => condition.Scope = "HEADWORD";
-            equals.Action = _ => condition.Match = "EXACT";
+            equals.Action = _ => tempCondition.Match = "EXACT";
             endsWith.Action = m =>
             {
-                condition.Match = "ENDWITH";
+                tempCondition.Match = "ENDWITH";
                 condition.Scope = "HEADWORD";
             };
             startsWith.Action = m =>
             {
-                condition.Match = "STARTWITH";
+                tempCondition.Match = "STARTWITH";
                 condition.Scope = "HEADWORD";
             };
             contains.Action = m =>
             {
-                condition.Match = "CONTAIN";
+                tempCondition.Match = "CONTAIN";
                 condition.Scope = "HEADWORD";
             };
+            singleCondition.Action = () => condition.Conditions.Add(tempCondition);
             lastMethod.Action = m => condition.ResultType = m.Method.Name;
             query.Action = _ => condition.ResultType = "SelectItems";
 
@@ -215,6 +253,7 @@ namespace Marimo.LinqToDejizo
         {
             try
             {
+                return "query text";
                 return expression?.ToString() ?? "null";
             }
             catch

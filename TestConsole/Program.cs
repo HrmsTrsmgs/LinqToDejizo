@@ -14,9 +14,9 @@ namespace TestConsole
             {
                 Console.WriteLine($"{DateTime.Now:O} {e.Uri}");
             };
-            tested.Responsed += (sender, e) =>
+            tested.ReturnedResponse += (sender, e) =>
             {
-                Console.WriteLine($"{DateTime.Now:O} {e.ResponseJson}");
+                Console.WriteLine($"{DateTime.Now:O} {e.Response}");
             };
 
             var query =

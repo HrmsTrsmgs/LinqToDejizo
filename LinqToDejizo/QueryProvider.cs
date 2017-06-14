@@ -24,7 +24,7 @@ namespace Marimo.LinqToDejizo
         IQueryable IQueryProvider.CreateQuery(Expression expression)
         {
 
-            Type elementType = TypeSystem.GetElementType(expression.Type);
+            Type elementType = expression.Type.ElementType();
 
             try
             {

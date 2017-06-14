@@ -309,12 +309,29 @@ namespace Marimo.LinqToDejizo.Test
         [Fact]
         public void 多数の要素がすべて取得できます()
         {
+            DejizoClient.PageSize = 20;
+
             var query =
                 from item in tested.EJdict
                 where item.HeaderText.Contains("dict")
                 select item;
 
             query.ToArray().Count().Is(45);
+
+            DejizoClient.PageSize = 1000;
+        }
+
+        [Fact]
+        public void And条件が指定できます()
+        {
+            var query =
+                from item in tested.EJdict
+                where item.HeaderText.StartsWith("dic") && item.HeaderText.EndsWith("ry")
+                select item;
+
+            query.Count().Is(1);
+
+            query.ToArray().All(x => x.HeaderText.StartsWith("dic") && x.HeaderText.EndsWith("ry")).IsTrue();
         }
     }
 }
