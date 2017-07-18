@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Marimo.LinqToDejizo.DejizoEntity
 {
-    public class SearchDicItemData
+    public class SearchDicItemCondition
     {
         public string Dic { get; set; } = "EJdict";
         public string ResultType { get; set; }

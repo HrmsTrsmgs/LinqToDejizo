@@ -72,7 +72,7 @@ namespace Marimo.LinqToDejizo
 
         static HttpClient client = new HttpClient { BaseAddress = new Uri("http://public.dejizo.jp/NetDicV09.asmx/") };
 
-        public async Task<SearchDicItemResult> SearchDicItemLite(SearchDicItemData data)
+        public async Task<SearchDicItemResult> SearchDicItemLite(SearchDicItemCondition data)
         {
             await Wait();
 
@@ -87,7 +87,7 @@ namespace Marimo.LinqToDejizo
                 ReturnedResponse?.Invoke(this, e);
             };
 
-            return await client.GetAsync<SearchDicItemData, SearchDicItemResult>(
+            return await typicalClient.GetAsync<SearchDicItemCondition, SearchDicItemResult>(
                 "SearchDicItemLite",
                 data);
             
@@ -96,23 +96,21 @@ namespace Marimo.LinqToDejizo
         public async Task<GetDicItemResult> GetDicItemLite(string itemId)
         {
             await Wait();
-            var uri =
-                QueryHelpers.AddQueryString(
-                    "http://public.dejizo.jp/NetDicV09.asmx/GetDicItemLite",
-                    new Dictionary<string, string>
-                    {
-                            {"Dic", "EJdict"},
-                            {"Item", itemId},
-                            {"Loc", ""},
-                            {"Prof", "XHTML"}
-                    });
-            var response = await client.GetAsync(uri);
 
-            var stream = await response.Content.ReadAsStreamAsync();
+            var typicalClient = new TypicalHttpClient(client);
 
-            var serializer = new DataContractSerializer(typeof(GetDicItemResult));
+            typicalClient.Requested += (sender, e) =>
+            {
+                Requested?.Invoke(this, e);
+            };
+            typicalClient.ReturnedResponse += (sender, e) =>
+            {
+                ReturnedResponse?.Invoke(this, e);
+            };
 
-            return serializer.ReadObject(stream) as GetDicItemResult;
+            return await typicalClient.GetAsync<GetDicItemCondition, GetDicItemResult>(
+                "GetDicItemLite",
+                new GetDicItemCondition { Item = itemId });
         }
 
         private async Task Wait()

@@ -39,7 +39,7 @@ namespace Marimo.LinqToDejizo
             foreach(var c in condition.Conditions)
             {
                 var data =
-                    new SearchDicItemData
+                    new SearchDicItemCondition
                     {
                         Word = c.Word,
                         Match = c.Match,
