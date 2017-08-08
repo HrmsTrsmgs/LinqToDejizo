@@ -8,14 +8,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 using Xunit;
 
 namespace LinqToAmazonProductAdvertisingApiTest
 {
-
-
-
     public class UnitTest1
     {
         [Fact]
