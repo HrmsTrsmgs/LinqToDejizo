@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Xunit;
 using System.Linq;
+using ChainingAssertion;
 
 namespace Marimo.LinqToDejizo.Test
 {
@@ -88,7 +89,7 @@ namespace Marimo.LinqToDejizo.Test
             query.Count().Is(1);
         }
 
-        
+
         [Fact]
         public void 完全一致検索はプロパティで指定することもできます()
         {
@@ -132,7 +133,7 @@ namespace Marimo.LinqToDejizo.Test
                 where item.HeaderText.StartsWith("dict")
                 select item;
 
-            foreach(var item in query)
+            foreach (var item in query)
             {
                 item.BodyText.Is("ｄｉｃｔａｔｉｏｎ	ｄｉｃｔａｔｏｒ	ｄｉｃｔｉｏｎａｒｙ");
                 break;
@@ -146,8 +147,8 @@ namespace Marimo.LinqToDejizo.Test
                 from item in tested.EJdict
                 where item.HeaderText.StartsWith("dict")
                 select item;
-           
-           query.First().BodyText.Is("ｄｉｃｔａｔｉｏｎ	ｄｉｃｔａｔｏｒ	ｄｉｃｔｉｏｎａｒｙ");
+
+            query.First().BodyText.Is("ｄｉｃｔａｔｉｏｎ	ｄｉｃｔａｔｏｒ	ｄｉｃｔｉｏｎａｒｙ");
         }
 
         [Fact]
@@ -158,7 +159,7 @@ namespace Marimo.LinqToDejizo.Test
                 where item.HeaderText.StartsWith("xxx")
                 select item;
 
-            Assert.Throws<InvalidOperationException>(() =>query.First());
+            Assert.Throws<InvalidOperationException>(() => query.First());
         }
 
         [Fact]

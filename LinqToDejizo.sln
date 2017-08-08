@@ -1,15 +1,19 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26403.3
+VisualStudioVersion = 15.0.26430.16
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinqToDejizo", "LinqToDejizo\LinqToDejizo.csproj", "{0801F684-6F74-431C-9D47-F361EF299166}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LinqToDejizo", "LinqToDejizo\LinqToDejizo.csproj", "{0801F684-6F74-431C-9D47-F361EF299166}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinqToDejizoTest", "LinqToDejizoTest\LinqToDejizoTest.csproj", "{CC642DA0-4EEC-494E-BBC9-527A0F885A4B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LinqToDejizoTest", "LinqToDejizoTest\LinqToDejizoTest.csproj", "{CC642DA0-4EEC-494E-BBC9-527A0F885A4B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestConsole", "TestConsole\TestConsole.csproj", "{C0097438-F834-43A6-BBFF-1E2A8343E3E2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestConsole", "TestConsole\TestConsole.csproj", "{C0097438-F834-43A6-BBFF-1E2A8343E3E2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExpressionParserCombinator", "ExpressionParser\ExpressionParserCombinator.csproj", "{1755E460-8D64-462E-82A3-305367D88372}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExpressionParserCombinator", "ExpressionParser\ExpressionParserCombinator.csproj", "{1755E460-8D64-462E-82A3-305367D88372}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinqToAmazonProductAdvertisingApi", "LinqToAmazonProductAdvertisingApi\LinqToAmazonProductAdvertisingApi.csproj", "{3317C391-97BB-4F3A-9EB9-2F8A7FA777B5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinqToAmazonProductAdvertisingApiTest", "LinqToAmazonProductAdvertisingApiTest\LinqToAmazonProductAdvertisingApiTest.csproj", "{FDDC76E9-D80A-4826-A031-9E4BBF210AF7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +37,14 @@ Global
 		{1755E460-8D64-462E-82A3-305367D88372}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1755E460-8D64-462E-82A3-305367D88372}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1755E460-8D64-462E-82A3-305367D88372}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3317C391-97BB-4F3A-9EB9-2F8A7FA777B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3317C391-97BB-4F3A-9EB9-2F8A7FA777B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3317C391-97BB-4F3A-9EB9-2F8A7FA777B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3317C391-97BB-4F3A-9EB9-2F8A7FA777B5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FDDC76E9-D80A-4826-A031-9E4BBF210AF7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FDDC76E9-D80A-4826-A031-9E4BBF210AF7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FDDC76E9-D80A-4826-A031-9E4BBF210AF7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FDDC76E9-D80A-4826-A031-9E4BBF210AF7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
