@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Marimo.ExpressionParserCombinator;
+using Marimo.LinqToAmazonProductAdvertisingApi;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -9,6 +11,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using static Marimo.ExpressionParserCombinator.ParserCreaters;
 
 namespace Marimo.LinqToDejizo
 {
@@ -31,6 +34,7 @@ namespace Marimo.LinqToDejizo
 
         public override object Execute(Expression expression)
         {
+            
             return Task.Run(async () =>
             {
                 var parameters = new Dictionary<string, String>()
@@ -41,7 +45,7 @@ namespace Marimo.LinqToDejizo
                     ["AssociateTag"] = AssociateTag,
                     ["SearchIndex"] = "Books",
                     ["ResponseGroup"] = "Images,ItemAttributes",
-                    ["Keywords"] = "\"初めてのRuby\""
+                    ["Keywords"] = ParseLinqRoot(expression)
                 };
                 return await FetchTitleAsync(Sign(parameters));
             }).GetAwaiter().GetResult();
@@ -115,6 +119,70 @@ namespace Marimo.LinqToDejizo
             {
                 return string.CompareOrdinal(p1, p2);
             }
+        }
+
+        private string ParseLinqRoot(Expression expression)
+        {
+            var selectLambda = Lambda();
+
+            var constWord = Constant();
+
+            var valiableWord = Member();
+
+            var word = constWord | valiableWord;
+                
+
+            var singleCondition = _
+                ((Book b, string p) => b.IncludeKeyword(p),
+                    arguments: new[] { word });
+
+            var whereFunc =
+                Unary(
+                    operand: Lambda(singleCondition));
+
+            var query =
+                _((IQueryable<object> c) => c.Where(x => true),
+                    arguments: new[] { null, whereFunc })
+                |
+                _((IQueryable<object> c) => c.Select(x => x),
+                    arguments: new ExpressionParser[]
+                    {
+                        MethodCall(
+                            arguments:new[]{ null, whereFunc }),
+                        Unary(
+                            operand: selectLambda)
+                    });
+
+            var count =
+                _((IQueryable<object> c) => c.Count(),
+                    arguments: new[] { query });
+
+            var first =
+                _((IQueryable<object> c) => c.First(),
+                    arguments: new[] { query });
+
+            var firstOrDefault =
+                _((IQueryable<object> c) => c.FirstOrDefault(),
+                    arguments: new[] { query });
+
+            var single =
+                _((IQueryable<object> c) => c.Single(),
+                    arguments: new[] { query });
+
+            var singleOrDefault =
+                _((IQueryable<object> c) => c.SingleOrDefault(),
+                    arguments: new[] { query });
+
+            var lastMethod = count | first | single | firstOrDefault | singleOrDefault;
+
+            var wholeExtention = lastMethod | query;
+
+            string keyword = null;
+            singleCondition.Action = m => keyword = (string)((ConstantExpression)m.Arguments[0]).Value;
+
+            wholeExtention.Parse(expression);
+
+            return keyword;
         }
     }
 }

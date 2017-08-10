@@ -18,7 +18,7 @@ namespace Marimo.LinqToAmazonProductAdvertisingApi
     }
     public class Book
     {
-        public bool Include(string keyword)
+        public bool IncludeKeyword(string keyword)
         {
             return true;
         }

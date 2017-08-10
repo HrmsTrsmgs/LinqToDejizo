@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp1.1</TargetFramework>
+    <TargetFramework>netstandard1.6</TargetFramework>
     <AssemblyName>Marimo.ExpressionParserCombinator</AssemblyName>
     <RootNamespace>Marimo.ExpressionParserCombinator</RootNamespace>
     <Version>0.0.4</Version>

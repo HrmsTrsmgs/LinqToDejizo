@@ -1,4 +1,4 @@
-using AmazonProductAdvtApi;
+using ChainingAssertion;
 using Marimo.LinqToAmazonProductAdvertisingApi;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Memory;
@@ -21,7 +21,7 @@ namespace LinqToAmazonProductAdvertisingApiTest
         {
             var config =
                 new ConfigurationBuilder()
-                .SetBasePath(Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.FullName)
+                .SetBasePath(new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.Parent.FullName)
                 .AddJsonFile(@"appsettings.json")
                 .AddJsonFile(@"secretsettings.json", true)
                 .Build();
@@ -34,7 +34,7 @@ namespace LinqToAmazonProductAdvertisingApiTest
 
             var query =
                 from book in source.Books
-                where book.Include("\"èâÇﬂÇƒÇÃRuby\"")
+                where book.IncludeKeyword("\"èâÇﬂÇƒÇÃRuby\"")
                 select book.Title;
 
             query.First().Is("èâÇﬂÇƒÇÃRuby");
